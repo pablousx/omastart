@@ -68,7 +68,46 @@ when shown. Unsupported entries explain their limits in expanded details.
 No privileged operations, package installation, or external network service is
 required. omastart is independent of `smartalb.autostart` and does not modify it.
 
-## Local installation
+## Installation
+
+Install the published plugin through Omarchy:
+
+```sh
+omarchy plugin add https://github.com/pablousx/omastart.git --enable
+```
+
+The native installer clones the repository, validates the manifest, and enables
+its bar widget after confirmation. No startup preferences change during
+installation. Omarchy Quattro and the dependencies listed above must already be
+available; no install hooks or package installation are required.
+
+For a Git-managed installation, review and apply updates with:
+
+```sh
+omarchy plugin update io.github.pablousx.omastart
+```
+
+If you already installed a local snapshot with `scripts/install.py`, continue
+using that installer to update it. The native `add` command deliberately refuses
+to overwrite an existing plugin with the same ID. To switch to Git-managed
+updates, disable and remove the existing plugin first, then run the native
+installation command above. Startup settings and recovery records persist.
+
+To disable or remove either installation:
+
+```sh
+omarchy plugin disable io.github.pablousx.omastart
+omarchy plugin remove io.github.pablousx.omastart
+```
+
+Restore any startup preferences you want to change before removal. Removing the
+plugin does not undo startup settings or erase recovery records.
+
+[Website](https://pablousx.github.io/omastart/) ·
+[Privacy policy](https://pablousx.github.io/omastart/privacy.html) ·
+[Terms of service](https://pablousx.github.io/omastart/terms.html)
+
+## Local installation and development
 
 From the source directory, as your normal desktop user:
 

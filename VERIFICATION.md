@@ -1,8 +1,8 @@
 # Verification — 0.1.0
 
 Verified locally on September 10, 2026, against Omarchy 4.0.3-1 and the
-installed Quattro shell. No remote repository or marketplace submission was
-created.
+installed Quattro shell. These results describe local validation of the plugin;
+marketplace review is a separate process.
 
 ## Isolated checks
 

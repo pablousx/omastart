@@ -20,7 +20,8 @@ the simulated startup controls, copy command, and optional saved theme.
 
 ## Publish with GitHub Pages
 
-When you are ready to make the repository public and publish it:
+The site is published at <https://pablousx.github.io/omastart/>. Its publishing
+configuration is:
 
 1. Push the repository to `pablousx/omastart` on GitHub.
 2. In **Settings → Pages**, choose **Deploy from a branch**.
@@ -32,12 +33,13 @@ The `.nojekyll` file keeps these plain static assets out of Jekyll processing.
 All navigation and asset URLs are relative, including the policy pages, so the
 site works under the `/omastart/` project prefix. Canonical and Open Graph URLs
 assume the address above; update them in all three HTML pages for another host.
-No remote has been configured and no deployment has been performed by this work.
+Updates to `main` automatically rebuild the published site.
 
 ## Update the downloadable source
 
-The website deliberately ships a working source ZIP rather than linking to a
-repository that was not publicly available when the site was prepared.
+The website ships a self-contained source ZIP alongside the public
+[repository](https://github.com/pablousx/omastart). The README also documents
+native installation and updates through `omarchy plugin`.
 The ZIP contains the plugin, installer, documentation, license, and Python checks.
 It excludes this website, local verification artifacts, Git metadata, and user
 configuration. The ZIP does not install or execute anything when downloaded.
