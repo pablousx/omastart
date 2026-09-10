@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.pablousx.omastart",
+  "name": "omastart",
+  "version": "0.1.0",
+  "author": "pablousx",
+  "license": "MIT",
+  "description": "Manage everything that starts with your Omarchy session.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {"barWidget": "BarWidget.qml"},
+  "barWidget": {
+    "displayName": "omastart",
+    "description": "Search and manage startup applications across Hyprland, XDG and user systemd.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "left"
+  }
+}
