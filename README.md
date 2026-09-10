@@ -206,3 +206,17 @@ items, and compares startup fingerprints. It never invokes a startup toggle.
 Its local report and per-display screenshots are written to `.verification/`;
 the cropped main-panel capture becomes `preview.png`. It is not part of the
 isolated test command and is intended for this machine's acceptance run.
+
+## Project website
+
+The responsive landing page, privacy policy, and terms of service are in
+[`docs/`](docs/README.md). Preview them locally with:
+
+```sh
+python3 -m http.server 8000 --bind 127.0.0.1 --directory docs
+```
+
+GitHub Pages can publish `main` → `/docs` with no build step. The site includes
+a downloadable source snapshot; refresh it with
+`python3 scripts/build_site_download.py` after changing the plugin. See the
+[website guide](docs/README.md) for publishing and maintenance details.

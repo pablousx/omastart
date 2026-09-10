@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="What the plugin reads, what stays on your computer, and how this website works."
+    />
+    <meta name="theme-color" content="#1a1b26" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Privacy policy — omastart" />
+    <meta
+      property="og:description"
+      content="What the plugin reads, what stays on your computer, and how this website works."
+    />
+    <meta property="og:site_name" content="omastart" />
+    <meta
+      property="og:url"
+      content="https://pablousx.github.io/omastart/privacy.html"
+    />
+    <link
+      rel="canonical"
+      href="https://pablousx.github.io/omastart/privacy.html"
+    />
+    <title>Privacy policy — omastart</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/site.css" />
+    <script src="assets/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="index.html" aria-label="omastart home"
+          ><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M 6.5 15.133975 C 10.5 12.824574 12 7.8 12 5.5 L 9.2 8.3 Q 8.5 9 7.8 8.3 Q 7.1 7.6 7.8 6.9 L 12.3 2.4 Q 13 1.7 13.7 2.4 L 18.2 6.9 Q 18.9 7.6 18.2 8.3 Q 17.5 9 16.8 8.3 L 14 5.5 C 14 8.8 11.5 14.556624 7.5 16.866025 A 1 1 0 0 1 6.5 15.133975 Z"
+            />
+            <path
+              d="M 3 19.5 H 11 A 1 1 0 0 1 11 21.5 H 3 A 1 1 0 0 1 3 19.5 Z"
+            /></svg
+          ><span>omastart<span class="accent">.</span></span></a
+        >
+        <nav class="site-nav" aria-label="Main navigation">
+          <a class="wide-link" href="index.html#how-it-works">How it works</a>
+          <a href="index.html#install"
+            >Install <span aria-hidden="true">↗</span></a
+          >
+          <button
+            class="theme-button"
+            type="button"
+            data-theme-toggle
+            hidden
+            aria-label="Switch to Everforest theme"
+          >
+            <span class="theme-swatch" aria-hidden="true"></span
+            ><span data-theme-name>Tokyo Night</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      <div class="container">
+        <header class="legal-hero">
+          <p class="breadcrumb">
+            <a href="index.html">omastart</a> / privacy policy
+          </p>
+          <p class="eyebrow">The details, in the open</p>
+          <h1>Privacy policy<span class="accent">.</span></h1>
+          <p class="lede">
+            What the plugin reads, what stays on your computer, and how this
+            website works.
+          </p>
+          <p class="small">
+            Effective September 10, 2026 · Maintained by pablousx
+          </p>
+        </header>
+        <div class="legal-layout">
+          <nav class="legal-nav" aria-label="On this page">
+            <p class="eyebrow">On this page</p>
+            <a href="#about">01 / About this policy</a
+            ><a href="#plugin">02 / What the plugin uses</a
+            ><a href="#storage">03 / Local storage & retention</a
+            ><a href="#website">04 / This website</a
+            ><a href="#sharing">05 / Sharing & contact</a
+            ><a href="#changes">06 / Policy changes</a>
+          </nav>
+          <article class="legal-body" aria-label="Privacy policy">
+            <div class="legal-callout">
+              <p>
+                <strong>Your app list stays local.</strong> omastart has no
+                accounts, telemetry, advertising, or cloud backend. The website
+                demo uses example data and cannot read or change your desktop
+                configuration.
+              </p>
+            </div>
+            <section id="about" aria-labelledby="about-title">
+              <h2 id="about-title"><span>01</span>About this policy</h2>
+              <p>
+                omastart is an independent open-source project maintained by
+                <a href="https://github.com/pablousx">pablousx</a>. This policy
+                covers the unmodified omastart desktop plugin and this project
+                website. It does not cover modified versions or the separate
+                practices of your operating system, installed applications, or
+                website host.
+              </p>
+            </section>
+            <section id="plugin" aria-labelledby="plugin-title">
+              <h2 id="plugin-title"><span>02</span>What the plugin uses</h2>
+              <p>
+                The plugin processes information on your computer to show and
+                manage startup applications:
+              </p>
+              <ul>
+                <li>
+                  <strong>Application metadata:</strong> names, icons, desktop
+                  entries, executable commands, and paths identify applications
+                  and populate the app picker.
+                </li>
+                <li>
+                  <strong>Startup configuration:</strong> supported Hyprland
+                  statements, XDG autostart entries, and user systemd unit
+                  information determine startup status and available changes.
+                </li>
+                <li>
+                  <strong>Service metadata:</strong> the local user service
+                  manager supplies enablement and available running-state
+                  information.
+                </li>
+                <li>
+                  <strong>Recovery records:</strong> original file contents,
+                  file modes, symlink targets, and transaction metadata allow
+                  supported changes to be undone or recovered.
+                </li>
+              </ul>
+              <p>
+                omastart does not transmit this information to the maintainer or
+                a remote service. It does not execute startup commands while
+                scanning them. Applications you configure may have their own
+                network activity when they run; their privacy practices are
+                separate.
+              </p>
+            </section>
+            <section id="storage" aria-labelledby="storage-title">
+              <h2 id="storage-title">
+                <span>03</span>Local storage & retention
+              </h2>
+              <p>
+                Startup preferences remain in your user configuration. Recovery
+                records are stored under
+                <code>$XDG_STATE_HOME/omastart/transactions</code>, normally
+                <code>~/.local/state/omastart/transactions</code>. Installation
+                backups are stored under
+                <code>~/.config/omarchy/omastart-install-backups/</code>.
+              </p>
+              <p>
+                Recovery records can contain private commands, arguments, and
+                paths. They use private file permissions; encoded file contents
+                are <strong>not encryption</strong>. The plugin does not
+                automatically upload them or apply a timed retention policy.
+              </p>
+              <p>
+                Startup settings and backups persist after uninstalling the
+                plugin. You control their retention. Resolve interrupted changes
+                and restore any settings you need before deleting recovery
+                records; removing a backup removes that recovery option. The
+                maintainer cannot retrieve or delete local data remotely.
+              </p>
+            </section>
+            <section id="website" aria-labelledby="website-title">
+              <h2 id="website-title"><span>04</span>This website</h2>
+              <p>
+                This is a static website designed for GitHub Pages. It has no
+                analytics, advertising, sign-in, forms, remote fonts, or
+                embedded third-party media. It does not set application cookies
+                or connect to the desktop plugin.
+              </p>
+              <p>
+                If you change the color theme, the website saves
+                <code>omastart-theme</code> in your browser’s local storage.
+                This preference is not sent to the maintainer and remains until
+                you clear site data. The website still works when storage or
+                JavaScript is unavailable. Demo switches and filters stay in
+                page memory and reset on reload. The Copy button writes only the
+                displayed installation command to your clipboard when you press
+                it.
+              </p>
+              <p>
+                When hosted on GitHub Pages, GitHub may process request and
+                connection information such as IP addresses for hosting and
+                security under the
+                <a
+                  href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+                  >GitHub Privacy Statement</a
+                >. Links to other websites are subject to those services’ own
+                policies.
+              </p>
+            </section>
+            <section id="sharing" aria-labelledby="sharing-title">
+              <h2 id="sharing-title"><span>05</span>Sharing & contact</h2>
+              <p>
+                The maintainer receives no automatic plugin data. If you choose
+                to contact the maintainer through a public channel linked from
+                the
+                <a href="https://github.com/pablousx">pablousx GitHub profile</a
+                >, the information you share is handled by that platform and may
+                be visible to others.
+              </p>
+              <p>
+                Review diagnostic output before sharing it. Do not publish
+                recovery records, credentials, private command arguments, or
+                personal paths. For a privacy question, request an appropriate
+                private contact method before sharing sensitive information. For
+                information held by GitHub independently, use GitHub’s privacy
+                contact options.
+              </p>
+            </section>
+            <section id="changes" aria-labelledby="changes-title">
+              <h2 id="changes-title"><span>06</span>Policy changes</h2>
+              <p>
+                Updates will be published on this page with a revised effective
+                date. Check this policy when updating the plugin or website. The
+                source distribution includes the current project documentation,
+                and future changes should be assessed against the version you
+                use.
+              </p>
+            </section>
+            <div class="legal-end">
+              <a href="index.html">← Back to omastart</a
+              ><a href="terms.html">Terms of service →</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-top">
+          <a class="brand" href="index.html" aria-label="omastart home"
+            ><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M 6.5 15.133975 C 10.5 12.824574 12 7.8 12 5.5 L 9.2 8.3 Q 8.5 9 7.8 8.3 Q 7.1 7.6 7.8 6.9 L 12.3 2.4 Q 13 1.7 13.7 2.4 L 18.2 6.9 Q 18.9 7.6 18.2 8.3 Q 17.5 9 16.8 8.3 L 14 5.5 C 14 8.8 11.5 14.556624 7.5 16.866025 A 1 1 0 0 1 6.5 15.133975 Z"
+              />
+              <path
+                d="M 3 19.5 H 11 A 1 1 0 0 1 11 21.5 H 3 A 1 1 0 0 1 3 19.5 Z"
+              /></svg
+            ><span>omastart<span class="accent">.</span></span></a
+          >
+          <nav class="footer-links" aria-label="Footer navigation">
+            <a href="privacy.html" aria-current="page">Privacy policy</a
+            ><a href="terms.html">Terms of service</a
+            ><a href="assets/LICENSE.txt">MIT license</a>
+          </nav>
+        </div>
+        <div class="footer-bottom">
+          <span
+            >Made by <a href="https://github.com/pablousx">pablousx</a> for
+            <a href="https://omarchy.org/">Omarchy</a>.</span
+          ><span
+            >A companion to
+            <a href="https://pablousx.github.io/omadocs/">omadocs ↗</a> ·
+            Independent &amp; open source.</span
+          >
+        </div>
+        <div class="footer-wordmark" aria-hidden="true">omastart.</div>
+      </div>
+    </footer>
+  </body>
+</html>

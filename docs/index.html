@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Manage everything that starts with your Omarchy session. A native, local, open-source startup manager for Omarchy Quattro."
+    />
+    <meta name="theme-color" content="#1a1b26" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="omastart — Your session. Your call." />
+    <meta
+      property="og:description"
+      content="Manage everything that starts with your Omarchy session. A native, local, open-source startup manager for Omarchy Quattro."
+    />
+    <meta property="og:site_name" content="omastart" />
+    <meta property="og:url" content="https://pablousx.github.io/omastart/" />
+    <link rel="canonical" href="https://pablousx.github.io/omastart/" />
+    <title>omastart — Your session. Your call.</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/site.css" />
+    <script src="assets/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="index.html" aria-label="omastart home"
+          ><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M 6.5 15.133975 C 10.5 12.824574 12 7.8 12 5.5 L 9.2 8.3 Q 8.5 9 7.8 8.3 Q 7.1 7.6 7.8 6.9 L 12.3 2.4 Q 13 1.7 13.7 2.4 L 18.2 6.9 Q 18.9 7.6 18.2 8.3 Q 17.5 9 16.8 8.3 L 14 5.5 C 14 8.8 11.5 14.556624 7.5 16.866025 A 1 1 0 0 1 6.5 15.133975 Z"
+            />
+            <path
+              d="M 3 19.5 H 11 A 1 1 0 0 1 11 21.5 H 3 A 1 1 0 0 1 3 19.5 Z"
+            /></svg
+          ><span>omastart<span class="accent">.</span></span></a
+        >
+        <nav class="site-nav" aria-label="Main navigation">
+          <a class="wide-link" href="index.html#how-it-works">How it works</a>
+          <a href="index.html#install"
+            >Install <span aria-hidden="true">↗</span></a
+          >
+          <button
+            class="theme-button"
+            type="button"
+            data-theme-toggle
+            hidden
+            aria-label="Switch to Everforest theme"
+          >
+            <span class="theme-swatch" aria-hidden="true"></span
+            ><span data-theme-name>Tokyo Night</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      <div class="container">
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-copy">
+            <p class="eyebrow">
+              <span class="status-dot" aria-hidden="true"></span> A little
+              plugin for Omarchy Quattro
+            </p>
+            <h1 id="hero-title">
+              A fresh session.<br />A familiar setup.<br /><span class="accent"
+                >Your call.</span
+              >
+            </h1>
+            <p class="lede">
+              Manage everything that starts with your Omarchy session. One
+              native panel for the apps you want waiting when you log in.
+            </p>
+            <div class="hero-actions">
+              <a class="button" href="#install"
+                >Get omastart <span aria-hidden="true">↗</span></a
+              ><a class="text-link" href="#how-it-works"
+                >Take a look <span aria-hidden="true">↓</span></a
+              >
+            </div>
+            <p class="release">
+              <span>v0.1.0</span> Free &amp; open source
+              <span aria-hidden="true">/</span> MIT
+            </p>
+          </div>
+          <figure
+            class="preview"
+            aria-label="Interactive example of the startup panel"
+          >
+            <div class="desktop">
+              <div class="desktop-bar" aria-hidden="true">
+                <span><b>1</b> &nbsp; 2 &nbsp; 3 &nbsp; / &nbsp; startup</span
+                ><span
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M 6.5 15.133975 C 10.5 12.824574 12 7.8 12 5.5 L 9.2 8.3 Q 8.5 9 7.8 8.3 Q 7.1 7.6 7.8 6.9 L 12.3 2.4 Q 13 1.7 13.7 2.4 L 18.2 6.9 Q 18.9 7.6 18.2 8.3 Q 17.5 9 16.8 8.3 L 14 5.5 C 14 8.8 11.5 14.556624 7.5 16.866025 A 1 1 0 0 1 6.5 15.133975 Z"
+                    />
+                    <path
+                      d="M 3 19.5 H 11 A 1 1 0 0 1 11 21.5 H 3 A 1 1 0 0 1 3 19.5 Z"
+                    />
+                  </svg>
+                  &nbsp; 09:41</span
+                >
+              </div>
+              <div class="wallpaper" aria-hidden="true"><span>~</span></div>
+              <div class="app-window">
+                <div class="app-title">
+                  <strong
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M 6.5 15.133975 C 10.5 12.824574 12 7.8 12 5.5 L 9.2 8.3 Q 8.5 9 7.8 8.3 Q 7.1 7.6 7.8 6.9 L 12.3 2.4 Q 13 1.7 13.7 2.4 L 18.2 6.9 Q 18.9 7.6 18.2 8.3 Q 17.5 9 16.8 8.3 L 14 5.5 C 14 8.8 11.5 14.556624 7.5 16.866025 A 1 1 0 0 1 6.5 15.133975 Z"
+                      />
+                      <path
+                        d="M 3 19.5 H 11 A 1 1 0 0 1 11 21.5 H 3 A 1 1 0 0 1 3 19.5 Z"
+                      />
+                    </svg>
+                    omastart</strong
+                  ><span class="demo-badge">DEMO</span>
+                </div>
+                <p class="app-subtitle">Your next session starts here.</p>
+                <div class="demo-summary">
+                  <span
+                    ><i aria-hidden="true"></i
+                    ><b data-enabled-count>3</b> enabled</span
+                  ><span>4 apps</span>
+                </div>
+                <div
+                  class="demo-filters"
+                  role="group"
+                  aria-label="Filter demo apps"
+                >
+                  <button
+                    type="button"
+                    data-filter="all"
+                    aria-pressed="true"
+                    disabled
+                  >
+                    All apps</button
+                  ><button
+                    type="button"
+                    data-filter="enabled"
+                    aria-pressed="false"
+                    disabled
+                  >
+                    Enabled</button
+                  ><button
+                    type="button"
+                    data-filter="disabled"
+                    aria-pressed="false"
+                    disabled
+                  >
+                    Disabled
+                  </button>
+                </div>
+                <div class="demo-list">
+                  <div class="demo-row" data-demo-row data-enabled="true">
+                    <span class="app-icon blue" aria-hidden="true">V</span>
+                    <div class="app-info">
+                      <strong>Vicinae</strong><span>XDG autostart</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="switch"
+                      role="switch"
+                      aria-checked="true"
+                      aria-label="Vicinae startup in demo"
+                      disabled
+                    >
+                      <span></span>
+                    </button>
+                  </div>
+                  <div class="demo-row" data-demo-row data-enabled="true">
+                    <span class="app-icon purple" aria-hidden="true">S</span>
+                    <div class="app-info">
+                      <strong>Synergy</strong><span>User systemd</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="switch"
+                      role="switch"
+                      aria-checked="true"
+                      aria-label="Synergy startup in demo"
+                      disabled
+                    >
+                      <span></span>
+                    </button>
+                  </div>
+                  <div class="demo-row" data-demo-row data-enabled="true">
+                    <span class="app-icon orange" aria-hidden="true">h</span>
+                    <div class="app-info">
+                      <strong>hyprsunset</strong><span>Hyprland</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="switch"
+                      role="switch"
+                      aria-checked="true"
+                      aria-label="hyprsunset startup in demo"
+                      disabled
+                    >
+                      <span></span>
+                    </button>
+                  </div>
+                  <div class="demo-row" data-demo-row data-enabled="false">
+                    <span class="app-icon green" aria-hidden="true">>_</span>
+                    <div class="app-info">
+                      <strong>Foot</strong><span>XDG autostart</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="switch"
+                      role="switch"
+                      aria-checked="false"
+                      aria-label="Foot startup in demo"
+                      disabled
+                    >
+                      <span></span>
+                    </button>
+                  </div>
+                  <p class="demo-empty" hidden>No apps in this view.</p>
+                </div>
+                <div class="demo-feedback">
+                  <span data-demo-message role="status" aria-live="polite"
+                    >Example apps. Try a switch.</span
+                  ><button type="button" data-undo hidden>Undo</button>
+                </div>
+              </div>
+            </div>
+            <figcaption>
+              <span><span class="accent">01 /</span> Interactive preview</span
+              ><span>Only changes this demo.</span>
+            </figcaption>
+            <noscript
+              ><p class="small">
+                Static preview. Enable JavaScript to try the switches.
+              </p></noscript
+            >
+          </figure>
+        </section>
+        <div class="principles" aria-label="At a glance">
+          <div>
+            <span class="principle-mark" aria-hidden="true">⌘</span>
+            <p>
+              Native to your desktop<small
+                >Quattro panel. Your Omarchy theme.</small
+              >
+            </p>
+          </div>
+          <div>
+            <span class="principle-mark" aria-hidden="true">↶</span>
+            <p>
+              Room to change your mind<small
+                >Local backups and reversible edits.</small
+              >
+            </p>
+          </div>
+          <div>
+            <span class="principle-mark" aria-hidden="true">~</span>
+            <p>
+              At home on your machine<small>No accounts. No telemetry.</small>
+            </p>
+          </div>
+        </div>
+        <section class="section" id="how-it-works" aria-labelledby="how-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">01 / A calmer login</p>
+              <h2 id="how-title">
+                Less file hunting.<br />More making yourself at home.
+              </h2>
+            </div>
+            <p>Three startup sources.<br />One place to understand them.</p>
+          </div>
+          <div class="steps">
+            <article>
+              <span class="step-index">[01]</span>
+              <h3>Find your apps.</h3>
+              <p>
+                Search by name, command, or source. Flip between enabled and
+                disabled apps, with system items tucked away by default.
+              </p>
+            </article>
+            <article>
+              <span class="step-index">[02]</span>
+              <h3>Set your next session.</h3>
+              <p>
+                Switch a supported startup source on or off. Running apps stay
+                open. Your choice takes effect at the next login.
+              </p>
+            </article>
+            <article>
+              <span class="step-index">[03]</span>
+              <h3>Make it yours.</h3>
+              <p>
+                Add an installed app to autostart. Expand an entry to see where
+                it comes from, or undo a change while its backup still matches.
+              </p>
+            </article>
+          </div>
+        </section>
+        <section class="sources-section" aria-labelledby="sources-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">02 / Everything in its place</p>
+              <h2 id="sources-title">
+                Different sources.<br />A single, honest view.
+              </h2>
+            </div>
+            <a class="text-link" href="assets/panel.png"
+              >See the actual panel <span aria-hidden="true">↗</span></a
+            >
+          </div>
+          <div class="source-list">
+            <article>
+              <span class="source-tag blue">01 / LUA</span>
+              <div>
+                <h3>Hyprland startup</h3>
+                <p>
+                  Supported literal startup calls in your user configuration.
+                  Complex Lua stays visible and read-only.
+                </p>
+              </div>
+              <code>autostart.lua</code>
+            </article>
+            <article>
+              <span class="source-tag green">02 / XDG</span>
+              <div>
+                <h3>Desktop autostart</h3>
+                <p>
+                  Desktop entries, per-user overrides, and an app picker.
+                  Generated services stay grouped with their app.
+                </p>
+              </div>
+              <code>*.desktop</code>
+            </article>
+            <article>
+              <span class="source-tag purple">03 / UNITS</span>
+              <div>
+                <h3>User systemd</h3>
+                <p>
+                  Supported user services, including globally enabled apps.
+                  Protected or indirect activation explains its limits.
+                </p>
+              </div>
+              <code>*.service</code>
+            </article>
+          </div>
+          <p class="note">
+            A startup setting tells you what is configured for login. It does
+            not tell you whether the app is running right now.
+          </p>
+        </section>
+        <section class="privacy-band" aria-labelledby="local-title">
+          <div>
+            <p class="eyebrow">03 / Local by design</p>
+            <h2 id="local-title">
+              Your session.<br />Your files. Your machine.
+            </h2>
+            <p>
+              omastart reads your startup configuration and saves changes in
+              your user directories. It doesn’t send your app list to a server.
+            </p>
+            <a class="text-link" href="privacy.html"
+              >Read the privacy policy <span aria-hidden="true">→</span></a
+            >
+          </div>
+          <div
+            class="local-diagram"
+            aria-label="Startup sources connect to omastart and local backups, all on your computer"
+          >
+            <div class="diagram-label">~/ your computer</div>
+            <div class="diagram-sources">
+              <span>Hyprland</span><span>XDG</span><span>systemd</span>
+            </div>
+            <div class="diagram-line" aria-hidden="true">
+              └─────────┬─────────┘<br />↓
+            </div>
+            <div class="diagram-app">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M 6.5 15.133975 C 10.5 12.824574 12 7.8 12 5.5 L 9.2 8.3 Q 8.5 9 7.8 8.3 Q 7.1 7.6 7.8 6.9 L 12.3 2.4 Q 13 1.7 13.7 2.4 L 18.2 6.9 Q 18.9 7.6 18.2 8.3 Q 17.5 9 16.8 8.3 L 14 5.5 C 14 8.8 11.5 14.556624 7.5 16.866025 A 1 1 0 0 1 6.5 15.133975 Z"
+                />
+                <path
+                  d="M 3 19.5 H 11 A 1 1 0 0 1 11 21.5 H 3 A 1 1 0 0 1 3 19.5 Z"
+                /></svg
+              ><strong>omastart</strong>
+            </div>
+            <div class="diagram-line" aria-hidden="true">↓</div>
+            <div class="diagram-backup">Local edits + recovery backups</div>
+          </div>
+        </section>
+        <section
+          class="section install"
+          id="install"
+          aria-labelledby="install-title"
+        >
+          <div class="install-copy">
+            <p class="eyebrow">04 / Make yourself at home</p>
+            <h2 id="install-title">Ready for your<br />next login.</h2>
+            <p>
+              You’ll need Omarchy Quattro, Python 3.10+, <code>systemctl</code>,
+              and <code>luac</code>. Install as your normal desktop user.
+            </p>
+            <a class="button" href="assets/omastart-0.1.0.zip" download
+              >Download v0.1.0 <span aria-hidden="true">↓</span></a
+            >
+            <p class="small">
+              Source ZIP · MIT licensed · No build step<br /><a
+                href="assets/SHA256SUMS.txt"
+                >SHA-256 checksum</a
+              >
+            </p>
+          </div>
+          <div>
+            <div class="terminal">
+              <div class="terminal-title">
+                <span>~/Downloads/omastart-0.1.0</span
+                ><button type="button" class="copy-button" data-copy hidden>
+                  Copy
+                </button>
+              </div>
+              <div class="terminal-body">
+                <p class="terminal-comment">
+                  # Extract the download, then open a terminal<br /># inside the
+                  omastart-0.1.0 folder.
+                </p>
+                <pre><code id="install-command">python3 scripts/install.py</code></pre>
+                <p class="terminal-comment">
+                  # The panel is now in your bar.<br /># Your startup choices
+                  are yours to make.
+                </p>
+              </div>
+            </div>
+            <p class="install-note">
+              The installer validates and copies the plugin, backs up the
+              previous installation, and enables the bar widget. It doesn’t
+              change your startup apps.
+            </p>
+            <p class="copy-status small" role="status" data-copy-status></p>
+          </div>
+        </section>
+        <section class="faq-section" aria-labelledby="faq-title">
+          <div>
+            <p class="eyebrow">05 / A few good questions</p>
+            <h2 id="faq-title">Before you<br />start.</h2>
+          </div>
+          <div class="faq-list">
+            <details>
+              <summary>Will switching an app off close it?</summary>
+              <p>
+                No. omastart changes startup configuration and never starts,
+                stops, or restarts your apps. Disabling a globally enabled
+                systemd service uses a per-user mask, which also blocks later
+                manual or indirect starts until restored.
+              </p>
+            </details>
+            <details>
+              <summary>Can I undo a change?</summary>
+              <p>
+                Supported changes save a local recovery record. Undo restores
+                the previous configuration if the affected files still match
+                what omastart wrote. If you edit those files elsewhere, omastart
+                preserves your newer work.
+              </p>
+            </details>
+            <details>
+              <summary>Can it manage every startup command?</summary>
+              <p>
+                It supports three startup mechanisms: Hyprland, XDG autostart,
+                and user systemd. Computed Lua, service templates, timers,
+                sockets, and other complex activation remain protected.
+                Login-shell scripts and app-internal startup settings are
+                outside this version’s scope.
+              </p>
+            </details>
+            <details>
+              <summary>Does it follow my Omarchy theme?</summary>
+              <p>
+                Yes. The installed plugin uses native Quattro controls,
+                typography, and theme colors. This website’s Tokyo Night and
+                Everforest palettes are a preview of the same desktop spirit.
+              </p>
+            </details>
+            <details>
+              <summary>What happens if I uninstall?</summary>
+              <p>
+                Your startup preferences and recovery backups stay on your
+                computer. Restore any startup settings you want to change before
+                removing the plugin. The included README explains removal and
+                backup locations.
+              </p>
+            </details>
+          </div>
+        </section>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-top">
+          <a class="brand" href="index.html" aria-label="omastart home"
+            ><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M 6.5 15.133975 C 10.5 12.824574 12 7.8 12 5.5 L 9.2 8.3 Q 8.5 9 7.8 8.3 Q 7.1 7.6 7.8 6.9 L 12.3 2.4 Q 13 1.7 13.7 2.4 L 18.2 6.9 Q 18.9 7.6 18.2 8.3 Q 17.5 9 16.8 8.3 L 14 5.5 C 14 8.8 11.5 14.556624 7.5 16.866025 A 1 1 0 0 1 6.5 15.133975 Z"
+              />
+              <path
+                d="M 3 19.5 H 11 A 1 1 0 0 1 11 21.5 H 3 A 1 1 0 0 1 3 19.5 Z"
+              /></svg
+            ><span>omastart<span class="accent">.</span></span></a
+          >
+          <nav class="footer-links" aria-label="Footer navigation">
+            <a href="privacy.html">Privacy policy</a
+            ><a href="terms.html">Terms of service</a
+            ><a href="assets/LICENSE.txt">MIT license</a>
+          </nav>
+        </div>
+        <div class="footer-bottom">
+          <span
+            >Made by <a href="https://github.com/pablousx">pablousx</a> for
+            <a href="https://omarchy.org/">Omarchy</a>.</span
+          ><span
+            >A companion to
+            <a href="https://pablousx.github.io/omadocs/">omadocs ↗</a> ·
+            Independent &amp; open source.</span
+          >
+        </div>
+        <div class="footer-wordmark" aria-hidden="true">omastart.</div>
+      </div>
+    </footer>
+  </body>
+</html>
