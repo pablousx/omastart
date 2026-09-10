@@ -10,7 +10,7 @@ function filtered(applications, query, sourceFilter, statusFilter, showSystem) {
         return (showSystem || !app.system)
             && (!needle || app.search.indexOf(needle) !== -1)
             && (sourceFilter === "all" || app.kinds.indexOf(sourceFilter) !== -1)
-            && (statusFilter === "all" || (statusFilter === "enabled" ? app.enabled : !app.enabled))
+            && (statusFilter === "all" || (statusFilter === "enabled" ? app.enabled : app.status === "Disabled"))
     })
 }
 
@@ -35,4 +35,17 @@ function sourceState(item) {
     if (item.eligible === false) return "Not applicable"
     if (item.eligible === null) return "Conditional"
     return item.globalEnabled ? "Enabled globally" : "Enabled"
+}
+
+function findSource(applications, id) {
+    for (var i = 0; i < applications.length; i++) {
+        for (var j = 0; j < applications[i].sources.length; j++) {
+            if (applications[i].sources[j].id === id) return applications[i].sources[j]
+        }
+    }
+    return null
+}
+
+function locked(app) {
+    return app.sources.length > 0 && app.sources.every(function(s) { return !!s.readOnly })
 }

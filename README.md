@@ -14,28 +14,48 @@ autostart, and user systemd into one searchable application list.
 
 ## Use
 
-Click the launch-arrow bar widget. Search by application, command, path, or
-startup source. Filter by source or status. Expand an application to inspect
-its independent startup mechanisms; switches always control a specific source.
+Click the launch-arrow bar widget. **All apps**, **Enabled**, and **Disabled**
+select a view directly. Search by application, command, path, or startup source;
+the clear button returns you to the list. **Filters** contains source choices
+and **Include system items**. Active filters remain visible when collapsed,
+and **Reset filters** clears them in one step.
 
-The main status means **configured to start at login**, not currently running.
-An app with an enabled XDG entry and a disabled native service is still enabled.
-Generated XDG systemd units belong to their desktop entry and are not counted
-or edited twice. Multiple enabled independent sources are flagged explicitly.
+Switches save a specific startup source. The affected row shows **Saving…**
+until the confirmed configuration comes back. A message names the app and
+result, with **Undo** for a reversible change. Undo pauses its dismissal while
+you hover or focus the message and becomes unavailable if the source changes
+elsewhere. Failed saves keep the previous displayed state and offer Refresh.
 
-**Add app** selects an installed desktop application and copies its desktop
+Click an app or its chevron for source controls. Apps with several independent
+sources expose each separately; turning one off reports if another remains
+enabled. **Why?** explains read-only items. Commands, paths, and running-state
+metadata sit behind **Technical details**. Generated XDG systemd units belong
+to their desktop entry and are never counted or edited twice.
+
+**Add app** searches installed desktop applications. Choose **Add** to copy an
 entry to your user autostart directory, preserving its command and actions.
-Apps that already have a startup source are marked as added; use their existing
-source instead. No application is launched by the picker.
+The picker stays open so you can add several apps. Existing entries offer
+**Manage**, which opens their startup settings. **Back** restores your previous
+search, filters, selection, and scroll position. No app is launched by the picker.
 
-Search receives keyboard focus when opening. Tab moves between controls;
-Down moves from search into the application list; arrows select rows; Enter
-or Space expands the selected application. Focused switches respond to Space
-or Enter. Escape clears search, returns from the picker, or closes the panel.
+The panel keeps a stable size during searches and updates. Expanding a row
+brings its controls into view; background refresh preserves your list position.
+Empty results explain what happened and offer a relevant action.
 
-System components are hidden by default. **Show system items** makes them
-inspectable, with protected controls remaining read-only. Unsupported entries
-explain the reason in their expanded details.
+Keyboard interaction:
+
+- **Ctrl+F** focuses and selects the search text; **Tab** moves between controls.
+- **Down** enters the list; **Up** from the first row returns to search.
+- **Enter** from search chooses the first result. In the list, **Enter/Space**
+  expands an app, adds a picker choice, or manages an existing picker entry.
+- **Left/Right** collapses or expands the selected app; focused switches use
+  **Space/Enter** to change their setting.
+- **Escape** clears search, returns from the picker, collapses details or
+  filters, then closes the panel, in that order.
+
+The status means configured to start at login. Running apps stay open when you
+change a setting. Infrastructure is hidden by default and remains protected
+when shown. Unsupported entries explain their limits in expanded details.
 
 ## Requirements
 

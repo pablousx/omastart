@@ -21,6 +21,29 @@ ShellRoot {
         }
         return null
     }
+    function checkRefreshFocus() {
+        try {
+            var list = test.find(panel, "applicationList")
+            list.forceLayout()
+            var toggle = panel.findControl(list, "detail-xdg:vicinae.desktop", false)
+            test.check(toggle !== null, "Expanded startup control must be reachable")
+            toggle.forceActiveFocus()
+            var remembered = panel.rememberListFocus()
+            test.check(remembered && remembered.id === "vicinae", "Refresh must remember the focused app")
+            panel.pendingRequest = {action:"scan"}
+            var refreshed = JSON.parse(JSON.stringify(panel.inventory))
+            refreshed.ok = true
+            panel.finish(JSON.stringify(refreshed), "", 0)
+            Qt.callLater(function() {
+                try {
+                    var restored = panel.findControl(list, "detail-xdg:vicinae.desktop", false)
+                    test.check(restored && restored.activeFocus, "Background refresh must restore the exact startup control's keyboard focus")
+                    console.log("OMASTART_QML_PASS " + test.assertions + " assertions")
+                    Qt.quit()
+                } catch (error) { console.error("OMASTART_QML_FAIL " + error); Qt.quit() }
+            })
+        } catch (error) { console.error("OMASTART_QML_FAIL " + error); Qt.quit() }
+    }
     property var fixture: ({
         applications: [
             {id:"vicinae", name:"Vicinae", icon:"", enabled:true, status:"Enabled", system:false,
@@ -111,8 +134,101 @@ ShellRoot {
                 panel.finish('{"ok":false,"error":"Simulated failure"}', "", 1)
                 test.check(panel.error === "Simulated failure", "Backend errors must be visible")
                 test.check(panel.inventory.applications[0].enabled, "A failed request must preserve displayed startup state")
-                console.log("OMASTART_QML_PASS " + test.assertions + " assertions")
-                Qt.quit()
+                // Common navigation must work without remembering a hidden cycle.
+                panel.setSearch("")
+                test.find(panel, "status-disabled").clicked()
+                test.check(panel.statusFilter === "disabled", "Disabled tab must select directly")
+                test.find(panel, "status-enabled").clicked()
+                test.check(panel.statusFilter === "enabled", "Enabled tab must select directly")
+                test.find(panel, "status-all").clicked()
+                test.find(panel, "filtersButton").clicked()
+                test.check(panel.filtersOpen, "Source filters must be discoverable")
+                panel.sourceFilter = "xdg"
+                panel.showSystem = true
+                panel.resetFilters()
+                test.check(panel.sourceFilter === "all" && panel.statusFilter === "all" && !panel.showSystem, "Reset must clear every hidden filter")
+                panel.setSearch("not installed")
+                test.find(panel, "clearSearchButton").clicked()
+                test.check(panel.inspect().query === "" && search.activeFocus, "Clear search must restore typing focus")
+                search.forceActiveFocus()
+                events.keyClick(Qt.Key_Down, Qt.NoModifier, 0)
+                events.keyClick(Qt.Key_Up, Qt.NoModifier, 0)
+                test.check(search.activeFocus, "Up from the first row must return to search")
+                events.keyClick(Qt.Key_Down, Qt.NoModifier, 0)
+                events.keyClick(Qt.Key_F, Qt.ControlModifier, 0)
+                test.check(search.activeFocus, "Ctrl+F must reach search from the list")
+                panel.expandedId = "vicinae"
+                panel.handleEscape()
+                test.check(panel.expandedId === "", "Escape must collapse details before dismissing")
+                panel.filtersOpen = true
+                panel.handleEscape()
+                test.check(!panel.filtersOpen, "Escape must collapse filters before dismissing")
+                panel.setSearch("Vicinae")
+                panel.enterPicker()
+                test.check(panel.adding && panel.inspect().query === "", "Picker must start with its own empty search")
+                panel.setSearch("sample")
+                panel.handleEscape()
+                test.check(panel.adding && panel.inspect().query === "", "Picker Escape must clear search first")
+                panel.handleEscape()
+                test.check(!panel.adding && panel.inspect().query === "Vicinae", "Back from picker must restore startup search")
+                panel.enterPicker()
+                panel.viewApplication({id:"vicinae.desktop", identity:"vicinae"})
+                test.check(!panel.adding && panel.expandedId === "vicinae" && panel.inspect().query === "Vicinae", "Manage existing picker entry must open its startup settings")
+                row.technical = true
+                panel.expandedId = ""
+                test.check(!row.technical, "Technical details must reset when collapsed")
+                test.check(Model.locked(test.fixture.applications[2]), "Infrastructure must explain a read-only state")
+                test.check(!Model.locked(test.fixture.applications[0]), "Editable alternatives must stay available")
+
+                // Exercise real response handling with isolated snapshots; never run a backend.
+                var saved = JSON.parse(JSON.stringify(test.fixture))
+                saved.ok = true
+                saved.applications[0].sources[0].enabled = false
+                saved.applications[0].sources[0].canUndo = true
+                saved.applications[0].sources[0].revision = "saved-revision"
+                saved.applications[0].enabled = false
+                saved.applications[0].status = "Disabled"
+                panel.pendingRequest = {action:"toggle", id:"xdg:vicinae.desktop", name:"Vicinae", enabled:false}
+                panel.pendingId = "xdg:vicinae.desktop"
+                panel.busy = true
+                test.check(row.pending, "Only the changed row should show Saving")
+                panel.finish(JSON.stringify(saved), "", 0)
+                test.check(!panel.busy && !row.pending, "Successful saves must end row progress")
+                test.check(panel.message === "Vicinae won't start at login.", "Success must name the app and saved outcome")
+                test.check(panel.canUndoMessage, "Successful reversible change must offer immediate Undo")
+                var changedElsewhere = JSON.parse(JSON.stringify(saved))
+                changedElsewhere.applications[0].sources[0].revision = "external-revision"
+                panel.pendingRequest = {action:"scan"}
+                panel.finish(JSON.stringify(changedElsewhere), "", 0)
+                test.check(!panel.canUndoMessage, "Toast Undo must not undo a later external change")
+                test.check(panel.message !== "", "Background refresh must preserve save feedback")
+                saved.applications[0].sources[1].enabled = true
+                saved.applications[0].enabled = true
+                panel.pendingRequest = {action:"toggle", id:"xdg:vicinae.desktop", name:"Vicinae", enabled:false}
+                panel.finish(JSON.stringify(saved), "", 0)
+                test.check(panel.message.indexOf("another enabled startup source") !== -1, "Disabling one source must not claim the whole app is disabled")
+                panel.pendingRequest = {action:"undo", id:"xdg:vicinae.desktop"}
+                panel.finish(JSON.stringify(saved), "", 0)
+                test.check(panel.message === "Previous startup setting restored." && !panel.canUndoMessage, "Undo feedback must confirm restoration without an ambiguous redo")
+                panel.error = "Save failed; review settings"
+                panel.pendingRequest = {action:"scan"}
+                panel.finish(JSON.stringify(saved), "", 0)
+                test.check(panel.error !== "", "Automatic refresh must not erase an unacknowledged failure")
+                panel.refresh(true)
+                test.check(panel.error === "", "Manual refresh must acknowledge the failure")
+                panel.dismissMessage()
+                test.check(!panel.message && !panel.canUndoMessage, "Dismissal must clear the toast action too")
+                var unknown = JSON.parse(JSON.stringify(test.fixture.applications[0]))
+                unknown.enabled = false
+                unknown.status = "Unknown"
+                test.check(Model.filtered([unknown], "", "all", "disabled", false).length === 0, "Unknown state must not be presented as Disabled")
+                panel.resetFilters()
+                panel.setSearch("Vicinae")
+                panel.expandedId = ""
+                search.forceActiveFocus()
+                events.keyClick(Qt.Key_Return, Qt.NoModifier, 0)
+                test.check(panel.expandedId === "vicinae", "Enter from search must open the matching app")
+                Qt.callLater(test.checkRefreshFocus)
             } catch (error) {
                 console.error("OMASTART_QML_FAIL " + error)
                 Qt.quit()

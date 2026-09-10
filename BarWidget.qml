@@ -67,6 +67,17 @@ Ui.BarWidget {
         target: root.moduleName
         // UI-only inspection controls. No mutation endpoint is exposed over IPC.
         function inspect(): string { return JSON.stringify(root.currentPanel().inspect()) }
+        function instances(): string {
+            var widgets = root.bar && typeof root.bar.moduleWidgets === "function" ? root.bar.moduleWidgets(root.moduleName) : [root]
+            return JSON.stringify(widgets.map(function(widget) { return widget.ownPanel().inspect() }))
+        }
+        function openOnScreen(screen: string): void {
+            var widgets = root.bar && typeof root.bar.moduleWidgets === "function" ? root.bar.moduleWidgets(root.moduleName) : [root]
+            for (var i = 0; i < widgets.length; i++) {
+                var panel = widgets[i].ownPanel()
+                if (panel.inspect().geometry.screen === screen) widgets[i].open()
+            }
+        }
         function search(query: string): void { root.currentPanel().setSearch(query) }
         function expand(id: string): void { root.currentPanel().expandedId = id }
         function filters(source: string, status: string, system: string): void {
@@ -74,6 +85,12 @@ Ui.BarWidget {
             root.currentPanel().statusFilter = status
             root.currentPanel().showSystem = system === "true"
         }
-        function refresh(): void { root.currentPanel().refresh() }
+        function picker(show: string): void {
+            var panel = root.currentPanel()
+            if (show === "true" && !panel.adding) panel.enterPicker()
+            else if (show !== "true" && panel.adding) panel.leavePicker()
+        }
+        function filterOptions(show: string): void { root.currentPanel().filtersOpen = show === "true" }
+        function refresh(): void { root.currentPanel().refresh(true) }
     }
 }

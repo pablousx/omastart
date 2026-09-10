@@ -52,9 +52,21 @@ def wait_for(predicate):
 
 
 def capture(current, path):
-    time.sleep(0.25)  # Let layout, icon decoding, and panel animation settle.
-    actual = state()
-    assert actual["opened"] and actual["query"] == current["query"]
+    # An outside click or focus handoff may dismiss a native panel during a
+    # check on an active desktop. Reopen our own widget and restore UI-only
+    # state before capturing; never synthesize clicks near startup switches.
+    for attempt in range(3):
+        actual = state()
+        if not actual["opened"] or actual["geometry"]["screen"] != current["geometry"]["screen"]:
+            ipc("openOnScreen", current["geometry"]["screen"])
+            ipc("search", current["query"])
+            ipc("expand", current["expandedId"])
+        time.sleep(0.25)
+        actual = state()
+        if actual["opened"] and actual["query"] == current["query"] and actual["geometry"]["screen"] == current["geometry"]["screen"]:
+            break
+    else:
+        raise RuntimeError("Desktop interaction repeatedly dismissed the panel during capture")
     current = actual
     geometry = current["geometry"]
     monitor = next(m for m in monitors if m["name"] == geometry["screen"])
@@ -68,13 +80,16 @@ before = json.loads(run([sys.executable, str(project / "scripts/capture_startup.
 monitors = json.loads(run(["hyprctl", "monitors", "-j"]))
 original_monitor = next(m["name"] for m in monitors if m["focused"])
 results = []
+ux_checks = []
 try:
     for monitor in monitors:
         focus_monitor(monitor["name"])
         assert run(["omarchy-shell", "shell", "summon", plugin_id, "{}"]) == "ok"
-        current = wait_for(lambda s: s["opened"] and s["loaded"] and not s["busy"])
-        assert current["geometry"]["screen"] == monitor["name"]
+        ipc("openOnScreen", monitor["name"])
+        current = wait_for(lambda s: s["opened"] and s["loaded"] and not s["busy"] and s["geometry"]["screen"] == monitor["name"])
         assert not current["error"]
+        ipc("picker", "false")
+        ipc("filterOptions", "false")
         ipc("filters", "all", "all", "false")
         ipc("search", "")
         ipc("expand", "")
@@ -98,6 +113,33 @@ try:
                 assert any(s["kind"] == "systemd" and not s["enabled"] for s in row["sources"])
             capture(current, output / (monitor["name"] + "-" + name.lower() + ".png"))
             results.append({"monitor":monitor["name"], "application":name, "state":row})
+        # Common UX states: direct status selection, useful empty state,
+        # advanced filters, and a picker that restores the original search.
+        ipc("expand", "")
+        ipc("search", "")
+        ipc("filters", "all", "disabled", "false")
+        assert all(row["status"] == "Disabled" for row in state()["rows"])
+        capture(state(), output / (monitor["name"] + "-disabled.png"))
+        ipc("filters", "all", "all", "false")
+        ipc("search", "omastart-no-match-fixture")
+        assert not state()["rows"]
+        capture(state(), output / (monitor["name"] + "-empty.png"))
+        ipc("search", "Vicinae")
+        ipc("picker", "true")
+        assert state()["adding"] and not state()["query"]
+        choices = state()["choices"]
+        assert choices, "Installed application picker is empty"
+        choice = next((app for app in choices if not app["exists"]), choices[0])
+        ipc("search", choice["name"])
+        assert any(app["id"] == choice["id"] for app in state()["choices"])
+        capture(state(), output / (monitor["name"] + "-picker.png"))
+        ipc("picker", "false")
+        assert state()["query"] == "Vicinae" and not state()["adding"]
+        ipc("search", "")
+        ipc("filterOptions", "true")
+        capture(state(), output / (monitor["name"] + "-filters.png"))
+        ipc("filterOptions", "false")
+        ux_checks.append({"monitor": monitor["name"], "passed": ["status filter", "empty results", "installed picker search", "picker return", "advanced filters"]})
         ipc("search", "pipewire")
         assert not state()["rows"]
         ipc("filters", "all", "all", "true")
@@ -109,7 +151,10 @@ try:
         run(["omarchy-shell", "shell", "hide", plugin_id])
     focus_monitor(original_monitor)
     run(["omarchy-shell", "shell", "summon", plugin_id, "{}"])
+    ipc("openOnScreen", original_monitor)
     current = wait_for(lambda s: s["opened"] and s["loaded"] and not s["busy"])
+    ipc("picker", "false")
+    ipc("filterOptions", "false")
     ipc("filters", "all", "all", "false")
     ipc("search", "")
     ipc("expand", "")
@@ -120,9 +165,9 @@ finally:
 
 after = json.loads(run([sys.executable, str(project / "scripts/capture_startup.py")]))
 changed = [key for key in sorted(set(before) | set(after)) if before.get(key) != after.get(key)]
-report = {"checks":results, "startupChangesDuringAcceptance":changed,
+report = {"checks":results, "uxChecks":ux_checks, "startupChangesDuringAcceptance":changed,
           "preview":"preview.png", "completed":time.strftime("%Y-%m-%dT%H:%M:%S%z")}
 (output / "live-acceptance.json").write_text(json.dumps(report, indent=2) + "\n")
 if changed:
     raise RuntimeError("Startup files changed during acceptance; inspect external changes: " + ", ".join(changed))
-print(f"Live acceptance passed: {len(results)} application/display checks; startup configuration unchanged.")
+print(f"Live acceptance passed: {len(results)} application/display checks, {sum(len(check['passed']) for check in ux_checks)} UX checks; startup configuration unchanged.")

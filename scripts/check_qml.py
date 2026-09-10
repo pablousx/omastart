@@ -35,7 +35,8 @@ with tempfile.TemporaryDirectory(prefix="omastart-qml-") as folder:
             dynamic = warning["id"] == "missing-property" and any(
                 expression in line for expression in (
                     *(["Style.font." + name] if name in {"family", "body", "caption", "subtitle"} else []),
-                    *(["Color.popups.text"] if name == "text" else []),
+                    *(["Color.popups.text", "Color.tooltip.text"] if name == "text" else []),
+                    *(["Color.tooltip." + name] if name in {"background", "border"} else []),
                     *(["panelLoader.item." + name] if name in {"opened", "popoutSwitchClosing", "open", "close", "closeForPopoutSwitch"} else []),
                     *(["root.bar.moduleWidgets"] if name == "moduleWidgets" else []),
                     *(["bar.barForeground"] if name == "barForeground" else []),
