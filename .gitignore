@@ -2,3 +2,13 @@ __pycache__/
 *.pyc
 .verification/
 .pytest_cache/
+
+# Common local files
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+*.log
+*.py[cod]
+.venv/
