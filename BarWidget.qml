@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -43,37 +42,7 @@ Ui.BarWidget {
         bar: root.bar
         tooltipText: "omastart · Startup applications"
         iconComponent: Component {
-            Item {
-                Shape {
-                    anchors.centerIn: parent
-                    width: 24
-                    height: 24
-                    scale: Math.min(parent.width, parent.height) / 24
-                    // One continuous curve: a 45-degree launch, ending vertical.
-                    ShapePath {
-                        strokeColor: root.barForegroundColor
-                        strokeWidth: 1.8
-                        fillColor: "transparent"
-                        capStyle: ShapePath.RoundCap
-                        joinStyle: ShapePath.RoundJoin
-                        startX: 4.5
-                        startY: 15.5
-                        PathCubic { control1X: 10.5; control1Y: 9.5; control2X: 14; control2Y: 10; x: 14; y: 3.5 }
-                        PathMove { x: 10; y: 7.5 }
-                        PathLine { x: 14; y: 3.5 }
-                        PathLine { x: 18; y: 7.5 }
-                    }
-                    ShapePath {
-                        strokeColor: root.barForegroundColor
-                        strokeWidth: 1.8
-                        fillColor: "transparent"
-                        capStyle: ShapePath.RoundCap
-                        startX: 4
-                        startY: 20.5
-                        PathLine { x: 20; y: 20.5 }
-                    }
-                }
-            }
+            LaunchIcon { foreground: root.barForegroundColor }
         }
         onPressed: function(mouseButton) { if (mouseButton === Qt.LeftButton) root.toggle() }
     }
