@@ -13,17 +13,17 @@ Item {
         preferredRendererType: Shape.CurveRenderer
 
         // A single filled outline avoids seams where the shaft meets the head.
-        // Both shaft edges leave at 45 degrees and bend only toward vertical.
+        // Both shaft edges leave at 30 degrees and bend only toward vertical.
         ShapePath {
             strokeWidth: -1
             fillColor: root.foreground
             PathSvg {
-                path: "M 6.3 15.3 C 10.1 11.5 12 7.8 12 5.5 "
+                path: "M 6.5 15.133975 C 10.5 12.824574 12 7.8 12 5.5 "
                     + "L 9.2 8.3 Q 8.5 9 7.8 8.3 Q 7.1 7.6 7.8 6.9 "
                     + "L 12.3 2.4 Q 13 1.7 13.7 2.4 "
                     + "L 18.2 6.9 Q 18.9 7.6 18.2 8.3 Q 17.5 9 16.8 8.3 "
-                    + "L 14 5.5 C 14 8.8 11.9 12.5 7.7 16.7 "
-                    + "Q 7 17.4 6.3 16.7 Q 5.6 16 6.3 15.3 Z"
+                    + "L 14 5.5 C 14 8.8 11.5 14.556624 7.5 16.866025 "
+                    + "A 1 1 0 0 1 6.5 15.133975 Z"
             }
         }
         ShapePath {
