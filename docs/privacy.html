@@ -148,7 +148,11 @@
                 <span>03</span>Local storage & retention
               </h2>
               <p>
-                Startup preferences remain in your user configuration. Recovery
+                Startup preferences remain in your user configuration. Records
+                that hide removed, disabled entries are stored under
+                <code>$XDG_CONFIG_HOME/omastart/removed</code>, normally
+                <code>~/.config/omastart/removed</code>. These records also
+                persist after uninstalling the plugin. Recovery
                 records are stored under
                 <code>$XDG_STATE_HOME/omastart/transactions</code>, normally
                 <code>~/.local/state/omastart/transactions</code>. Installation

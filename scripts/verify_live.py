@@ -113,13 +113,13 @@ try:
                 assert any(s["kind"] == "systemd" and not s["enabled"] for s in row["sources"])
             capture(current, output / (monitor["name"] + "-" + name.lower() + ".png"))
             results.append({"monitor":monitor["name"], "application":name, "state":row})
-        # Common UX states: direct status selection, useful empty state,
+        # Common UX states: read-only separation, useful empty state,
         # advanced filters, and a picker that restores the original search.
         ipc("expand", "")
         ipc("search", "")
-        ipc("filters", "all", "disabled", "false")
-        assert all(row["status"] == "Disabled" for row in state()["rows"])
-        capture(state(), output / (monitor["name"] + "-disabled.png"))
+        ipc("filters", "all", "readonly", "false")
+        assert all(all(source["readOnly"] for source in row["sources"]) for row in state()["rows"])
+        capture(state(), output / (monitor["name"] + "-readonly.png"))
         ipc("filters", "all", "all", "false")
         ipc("search", "omastart-no-match-fixture")
         assert not state()["rows"]
@@ -139,10 +139,10 @@ try:
         ipc("filterOptions", "true")
         capture(state(), output / (monitor["name"] + "-filters.png"))
         ipc("filterOptions", "false")
-        ux_checks.append({"monitor": monitor["name"], "passed": ["status filter", "empty results", "installed picker search", "picker return", "advanced filters"]})
+        ux_checks.append({"monitor": monitor["name"], "passed": ["read-only tab", "empty results", "installed picker search", "picker return", "advanced filters"]})
         ipc("search", "pipewire")
         assert not state()["rows"]
-        ipc("filters", "all", "all", "true")
+        ipc("filters", "all", "readonly", "false")
         protected = state()["rows"]
         assert protected and all(s["readOnly"] for r in protected for s in r["sources"])
         ipc("filters", "all", "all", "false")

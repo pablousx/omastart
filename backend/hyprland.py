@@ -173,7 +173,7 @@ def parse(text):
                 problem = "" if command and "\0" not in command else "Empty or invalid startup command."
             except Error as exc:
                 problem = str(exc)
-        results.append(dict(start=start, end=span_end, command=command, enabled=True,
+        results.append(dict(start=start, end=span_end, command=command, enabled=True, method=method.text,
                             readOnly=problem, line=text.count("\n", 0, token.start) + 1,
                             fragment=text[start:span_end]))
     # Recognize only whole comment lines, never calls embedded in prose or long comments.
@@ -256,7 +256,7 @@ def discover(roots, store, catalog, warnings):
         item = source("hyprland", key, app_id or f"Startup statement · line {entry['line']}",
                       entry["command"], roots.lua, entry["enabled"], line=entry["line"],
                       readOnly=entry["readOnly"] or store.writable(roots.lua), revision=revision,
-                      _entry=entry, _text=text)
+                      _entry=entry, _text=text, _method=entry.get("method", ""))
         enrich(item, catalog)
         if entry["fragment"].strip() == '-- o.launch_on_start("my-service")':
             item.update(system=True, readOnly="Commented Omarchy template example; this is not an installed application.")
@@ -264,20 +264,22 @@ def discover(roots, store, catalog, warnings):
     return rows
 
 
-def toggle(item, enabled, roots, store, runner):
-    entry = item["_entry"]
-    text = item["_text"]
-    fragment = entry["fragment"]
-    if enabled:
-        replacement = entry["uncomment"]
-    else:
-        # Comment every line of a multiline literal call. Such a disabled
-        # block is restored from the journal (not interpreted as Lua).
-        replacement = "\n".join(re.sub(r"^(\s*)", r"\1-- omastart:off ", line, count=1)
-                                for line in fragment.split("\n"))
-    candidate = text[:entry["start"]] + replacement + text[entry["end"]:]
-    runner(["luac", "-p", "-"], input=candidate)
+def toggle_changes(items, enabled, roots, runner):
+    # Several sources can live in the same Lua file. Apply them back-to-front
+    # against one snapshot, then validate and write the complete file once.
     before = snapshot(roots.lua)
-    if digest(before) != item["revision"]:
+    if any(digest(before) != item["revision"] for item in items):
         raise Error("The autostart file changed. Refresh and try again.")
-    return store.transact(item["id"], [(roots.lua, before, file_value(candidate.encode(), before.get("mode", 0o644)))])
+    candidate = items[0]["_text"]
+    for item in sorted(items, key=lambda value: value["_entry"]["start"], reverse=True):
+        entry = item["_entry"]
+        replacement = entry["uncomment"] if enabled else "\n".join(
+            re.sub(r"^(\s*)", r"\1-- omastart:off ", line, count=1)
+            for line in entry["fragment"].split("\n"))
+        candidate = candidate[:entry["start"]] + replacement + candidate[entry["end"]:]
+    runner(["luac", "-p", "-"], input=candidate)
+    return [(roots.lua, before, file_value(candidate.encode(), before.get("mode", 0o644)))]
+
+
+def toggle(item, enabled, roots, store, runner):
+    return store.transact(item["id"], toggle_changes([item], enabled, roots, runner))

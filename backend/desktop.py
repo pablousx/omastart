@@ -260,7 +260,7 @@ def discover(roots, store, catalog, warnings):
     return items
 
 
-def toggle(item, enabled, roots, store, runner):
+def toggle_changes(item, enabled, roots, store):
     destination = roots.autostart / item["id"].split(":", 1)[1]
     before = snapshot(destination)
     previous = store.previous(item["id"])
@@ -269,19 +269,24 @@ def toggle(item, enabled, roots, store, runner):
         old = entry["before"]
         # Restore precisely when the requested state matches the prior configuration.
         if old["type"] == "absent":
-            old_enabled = len(item["_alternatives"]) > 1
+            # Disabling a newly added entry must leave a Hidden=true entry,
+            # not undo Add and make the application disappear from discovery.
+            old_enabled = True if len(item["_alternatives"]) > 1 else None
         elif old["type"] == "file":
             import base64
             old_enabled = not Desktop(base64.b64decode(old["data"]).decode()).yes("Hidden")
         else:
             old_enabled = None
         if enabled == old_enabled and str(destination) == entry["path"] and before == entry["after"]:
-            return store.transact(item["id"], store.undo_changes(previous),
-                                  after=lambda: runner(["systemctl", "--user", "daemon-reload"]))
+            return store.undo_changes(previous)
     desktop = item["_desktop"]
     if enabled and not desktop.get("Exec"):
         raise Error("This minimal override cannot be enabled safely; restore its original application entry.")
     text = desktop.with_keys({"Hidden": "false" if enabled else "true"})
     mode = before.get("mode", 0o644)
-    return store.transact(item["id"], [(destination, before, file_value(text.encode(), mode))],
+    return [(destination, before, file_value(text.encode(), mode))]
+
+
+def toggle(item, enabled, roots, store, runner):
+    return store.transact(item["id"], toggle_changes(item, enabled, roots, store),
                           after=lambda: runner(["systemctl", "--user", "daemon-reload"]))

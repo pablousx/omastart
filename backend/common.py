@@ -221,6 +221,12 @@ are allowed as *values* for systemd masks/links, never as traversed parents.
                 continue
             if record.get("item") == item_id and record.get("status") == "committed":
                 return record
+            if record.get("status") == "committed" and item_id in record.get("sources", {}):
+                # Providers need their own history to recognize managed masks
+                # and restore exact links after an application-wide change.
+                paths = record["sources"][item_id]
+                return {**record, "grouped": True,
+                        "entries": [entry for entry in record["entries"] if entry["path"] in paths]}
         return None
 
     def pending(self):
@@ -254,7 +260,7 @@ are allowed as *values* for systemd masks/links, never as traversed parents.
         record["status"] = "rolled-back"
         self.journal_write(path, record)
 
-    def transact(self, item_id, changes, *, after=None):
+    def transact(self, item_id, changes, *, after=None, sources=None):
         """changes = [(path, expected_snapshot, replacement_snapshot), ...]."""
         entries = []
         for path, before, new in changes:
@@ -265,6 +271,8 @@ are allowed as *values* for systemd masks/links, never as traversed parents.
         if not entries:
             return None
         record = {"version": 1, "item": item_id, "status": "prepared", "entries": entries}
+        if sources:
+            record["sources"] = sources
         journal = self.roots.state / "transactions" / f"{time.time_ns()}-{uuid.uuid4().hex}.json"
         self.journal_write(journal, record)
         applied = []

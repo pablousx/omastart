@@ -13,7 +13,7 @@ Rectangle {
     property bool hasCursor: false
     readonly property bool expanded: !picker && manager.expandedId === entry.id
     property bool technical: false
-    readonly property bool pending: manager.busy && (picker ? manager.pendingId === entry.id : entry.sources.some(function(s) { return s.id === manager.pendingId }))
+    readonly property bool pending: manager.busy && (manager.pendingId === entry.id || !picker && entry.sources.some(function(s) { return s.id === manager.pendingId }))
     readonly property bool locked: !picker && Model.locked(entry)
     signal selected()
     signal revealRequested()
@@ -21,10 +21,23 @@ Rectangle {
     onTechnicalChanged: if (technical) revealRequested()
     Behavior on color { ColorAnimation { duration: 120 } }
     implicitHeight: contents.implicitHeight + Style.space(16)
-    radius: Style.cornerRadius
+    radius: Style.space(6)
     color: expanded ? Qt.alpha(Color.accent, 0.045) : (hover.containsMouse || hasCursor ? Qt.alpha(Color.foreground, 0.05) : "transparent")
     border.width: expanded || hasCursor ? 1 : 0
     border.color: Qt.alpha(Color.accent, hasCursor ? 0.7 : 0.20)
+
+    FontMetrics {
+        id: statusMetrics
+        font.family: Style.font.family
+        font.pixelSize: Style.space(11)
+    }
+
+    Rectangle {
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        height: 1
+        color: Qt.alpha(Color.foreground, 0.08)
+        visible: !root.expanded
+    }
 
     function activate() {
         if (picker) { if (entry.exists) manager.viewApplication(entry); else if (!manager.busy) manager.addApplication(entry) }
@@ -51,20 +64,20 @@ Rectangle {
         RowLayout {
             id: summary
             Layout.fillWidth: true
-            spacing: Style.space(12)
+            spacing: Style.space(8)
             AppIcon { iconName: root.entry.icon; appName: root.entry.name }
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: Style.space(4)
-                Label { Layout.fillWidth: true; text: root.entry.name; font.bold: true; font.pixelSize: Style.font.subtitle }
+                Label { objectName: "applicationTitle"; Layout.fillWidth: true; text: root.entry.name; font.bold: false; font.pixelSize: Style.space(13) }
                 Label {
                     Layout.fillWidth: true
                     text: root.picker ? (root.entry.exists ? "Already in your startup list" : "Start this app when you sign in") : Model.subtitle(root.entry)
                     color: Qt.alpha(Color.popups.text, 0.70)
-                    font.pixelSize: Style.font.caption
+                    font.pixelSize: Style.space(11)
                 }
             }
-            Ui.Button {
+            ActionButton {
                 objectName: "pickerAction"
                 visible: root.picker
                 text: root.pending ? "Adding…" : root.entry.exists ? "Manage" : "+ Add"
@@ -75,13 +88,18 @@ Rectangle {
                 onClicked: root.activate()
             }
             ColumnLayout {
+                id: statusColumn
                 visible: !root.picker
+                Layout.preferredWidth: Math.ceil(Math.max(statusMetrics.advanceWidth("Disabled"), statusMetrics.advanceWidth("Saving…"),
+                    statusMetrics.advanceWidth(root.entry.status || ""), root.locked ? statusMetrics.advanceWidth("Read-only") : 0))
+                Layout.minimumWidth: statusColumn.Layout.preferredWidth
+                Layout.maximumWidth: statusColumn.Layout.preferredWidth
                 spacing: 0
                 Label {
                     Layout.alignment: Qt.AlignRight
                     text: root.pending ? "Saving…" : root.entry.status || ""
                     color: root.entry.enabled ? Color.accent : Qt.alpha(Color.popups.text, 0.70)
-                    font.pixelSize: Style.font.caption
+                    font.pixelSize: Style.space(11)
                 }
                 Label {
                     Layout.alignment: Qt.AlignRight
@@ -92,36 +110,28 @@ Rectangle {
                 }
             }
             Item {
-                visible: !root.picker
-                implicitWidth: Style.space(root.entry.sources && root.entry.sources.length === 1 && !root.locked ? 50 : 74)
+                visible: !root.picker && !root.locked && root.entry.sources && root.entry.sources.length > 0
+                implicitWidth: Style.space(54)
                 implicitHeight: Style.space(34)
                 SourceToggle {
                     id: singleToggle
                     objectName: "startupToggle"
                     anchors.centerIn: parent
-                    visible: !root.picker && root.entry.sources && root.entry.sources.length === 1 && !root.locked
+                    visible: !root.picker && root.entry.sources && root.entry.sources.length > 0 && !root.locked
                     sourceItem: root.entry.sources ? root.entry.sources[0] : ({})
+                    applicationItem: root.entry.sources && root.entry.sources.length > 1 ? root.entry : null
                     manager: root.manager
                     appName: root.entry.name
                 }
-                Ui.Button {
-                    objectName: "sourceDetails"
-                    anchors.centerIn: parent
-                    visible: !singleToggle.visible
-                    text: root.locked ? "Why?" : root.expanded ? "⌃" : "⌄"
-                    focusable: true
-                    Accessible.name: (root.expanded ? "Hide details for " : "Show details for ") + root.entry.name
-                    tooltipText: root.locked ? "Why this startup item is read-only" : "Manage startup sources"
-                    onClicked: root.activate()
-                }
             }
-            Ui.Button {
+            ActionButton {
                 objectName: "sourceDetails"
-                visible: !root.picker && root.entry.sources && root.entry.sources.length === 1 && !root.locked
+                visible: !root.picker
                 text: root.expanded ? "⌃" : "⌄"
-                fontSize: Style.font.caption
-                horizontalPadding: Style.space(4)
-                tooltipText: "Startup details for " + root.entry.name
+                iconOnly: true
+                fontSize: Style.space(11)
+                horizontalPadding: Style.space(8)
+                tooltipText: root.locked ? "Why this startup item is read-only" : "Startup details for " + root.entry.name
                 Accessible.name: (root.expanded ? "Hide details for " : "Show details for ") + root.entry.name
                 focusable: true
                 onClicked: root.activate()
@@ -138,16 +148,25 @@ Rectangle {
                 visible: root.entry.duplicate === true
                 text: "This app may launch more than once. Turn off the extra startup source below."
                 color: Color.urgent
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Style.space(11)
                 wrapMode: Text.WordWrap
             }
             Label {
                 Layout.fillWidth: true
                 visible: !!root.entry.sources && root.entry.sources.length > 1 && !root.entry.duplicate
-                text: "This app has " + (root.entry.sources ? root.entry.sources.length : 0) + " startup sources. Manage each one below."
-                font.pixelSize: Style.font.caption
+                text: root.entry.toggleReadOnly || "The app toggle turns off all enabled methods. Turning it on uses "
+                    + (Model.preferredSource(root.entry) ? Model.sourceLabel(Model.preferredSource(root.entry).kind) : "an available method") + "."
+                font.pixelSize: Style.space(11)
                 color: Qt.alpha(Color.popups.text, 0.7)
                 wrapMode: Text.WordWrap
+            }
+            ActionButton {
+                objectName: "undoApplication"
+                visible: root.entry.canUndo === true
+                text: "Undo app startup change"
+                link: true
+                enabled: !root.manager.busy
+                onClicked: root.manager.request({action:"undoApplication", id:root.entry.id, revision:root.entry.revision, name:root.entry.name})
             }
             Repeater {
                 model: root.expanded ? root.entry.sources : []
@@ -159,9 +178,9 @@ Rectangle {
                     Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.alpha(Color.foreground, 0.10) }
                     RowLayout {
                         Layout.fillWidth: true
-                        Label { text: Model.sourceLabel(detail.modelData.kind); font.bold: true; font.pixelSize: Style.font.caption }
+                        Label { text: Model.sourceLabel(detail.modelData.kind); font.bold: false; font.pixelSize: Style.space(11) }
                         Item { Layout.fillWidth: true }
-                        Label { text: root.manager.busy && root.manager.pendingId === detail.modelData.id ? "Saving…" : Model.sourceState(detail.modelData); color: detail.modelData.enabled ? Color.accent : Qt.alpha(Color.popups.text, 0.70); font.pixelSize: Style.font.caption }
+                        Label { text: root.manager.busy && root.manager.pendingId === detail.modelData.id ? "Saving…" : Model.sourceState(detail.modelData); color: detail.modelData.enabled ? Color.accent : Qt.alpha(Color.popups.text, 0.70); font.pixelSize: Style.space(11) }
                         SourceToggle {
                             objectName: "detail-" + detail.modelData.id
                             sourceItem: detail.modelData
@@ -174,7 +193,7 @@ Rectangle {
                         Layout.fillWidth: true
                         visible: root.technical
                         text: detail.modelData.command || "Command unavailable"
-                        font.pixelSize: Style.font.caption
+                        font.pixelSize: Style.space(11)
                         wrapMode: Text.WrapAnywhere
                         elide: Text.ElideNone
                     }
@@ -192,7 +211,7 @@ Rectangle {
                         visible: !!detail.modelData.readOnly || !!detail.modelData.eligibility
                         text: detail.modelData.readOnly || detail.modelData.eligibility || ""
                         color: Qt.alpha(Color.popups.text, 0.70)
-                        font.pixelSize: Style.font.caption
+                        font.pixelSize: Style.space(11)
                         wrapMode: Text.WordWrap
                         elide: Text.ElideNone
                     }
@@ -211,26 +230,41 @@ Rectangle {
                         visible: detail.modelData.globalEnabled === true && !detail.modelData.readOnly
                         text: "Enabled for all users. Turning it off here also blocks manual starts for your user until you enable it again."
                         color: Qt.alpha(Color.popups.text, 0.70)
-                        font.pixelSize: Style.font.caption
+                        font.pixelSize: Style.space(11)
                         wrapMode: Text.WordWrap
                     }
-                    Ui.Button {
+                    ActionButton {
                         objectName: "undo-" + detail.modelData.id
                         visible: detail.modelData.canUndo === true
                         text: "Undo last change"
-                        fontSize: Style.font.caption
+                        link: true
+                        fontSize: Style.space(11)
                         focusable: true
                         enabled: !root.manager.busy
                         onClicked: root.manager.request({action:"undo", id:detail.modelData.id, revision:detail.modelData.revision, name:root.entry.name})
                     }
                 }
             }
-            Ui.Button {
-                objectName: "technicalDetails"
-                text: root.technical ? "Hide technical details" : "Technical details"
-                fontSize: Style.font.caption
-                focusable: true
-                onClicked: root.technical = !root.technical
+            RowLayout {
+                Layout.fillWidth: true
+                ActionButton {
+                    objectName: "technicalDetails"
+                    text: root.technical ? "Hide technical details" : "Technical details"
+                    link: true
+                    fontSize: Style.space(11)
+                    focusable: true
+                    onClicked: root.technical = !root.technical
+                }
+                Item { Layout.fillWidth: true }
+                ActionButton {
+                    objectName: "removeApplication"
+                    visible: root.entry.canRemove === true
+                    text: "Remove"
+                    fontSize: Style.space(11)
+                    enabled: !root.manager.busy
+                    tooltipText: "Remove from the list. Startup methods stay disabled."
+                    onClicked: root.manager.removeApplication(root.entry)
+                }
             }
         }
     }
