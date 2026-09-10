@@ -198,7 +198,7 @@ def discover(roots, store, catalog, warnings, runner):
     return items, generated
 
 
-def toggle(item, enabled, roots, store, runner):
+def toggle_changes(item, enabled, roots, store):
     name = item["unit"]
     mask = roots.user_units / name
     changes = []
@@ -224,5 +224,9 @@ def toggle(item, enabled, roots, store, runner):
                 if before["type"] != "absent":
                     raise Error("An unexpected enablement entry already exists; refresh before changing it.")
                 changes.append((path, before, {"type": "link", "target": str(item["_fragment"])}))
-    return store.transact(item["id"], changes,
+    return changes
+
+
+def toggle(item, enabled, roots, store, runner):
+    return store.transact(item["id"], toggle_changes(item, enabled, roots, store),
                           after=lambda: runner(["systemctl", "--user", "daemon-reload"]))

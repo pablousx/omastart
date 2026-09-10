@@ -4,6 +4,30 @@ Verified locally on September 10, 2026, against Omarchy 4.0.3-1 and the
 installed Quattro shell. These results describe local validation of the plugin;
 marketplace review is a separate process.
 
+## Application toggle update
+
+The current local update passes 89 Python tests, QML analysis, and 97 QML
+fixture assertions. The additional checks cover disabling multiple providers
+in one journal, selecting one eligible method on enable, grouped undo and
+recovery, rollback after reload failure, edits during planning, removed methods,
+protected sources, keyboard activation, progress, and app-level Undo feedback.
+Read-only tab checks cover separation from editable tabs, enabled-before-disabled
+ordering, protected system visibility, search/source filtering, and picker navigation.
+The consolidated Applications tab is checked for combined enabled/disabled items,
+preserved ordering and unknown states, and removal of the separate status tabs.
+Opening-order checks cover enabled-first sorting, stable rows through app/source
+toggles and refreshes, filter/tab/picker navigation, appended and removed items,
+and sorting again after reopening.
+Frame-separated layout checks also keep a scrolled list's viewport, scroll offset,
+row height, title width, switch position, and feedback height unchanged through
+saving, disabling, enabling, multiline feedback, and message dismissal.
+Add/remove checks cover newest-added placement, keeping disabled desktop entries,
+explicit list removal and Undo, persistent removal records, re-adding existing
+methods, masks, stale revisions, symlinks, and interrupted-removal recovery.
+Multiple Lua entries are edited against one snapshot and validated together.
+The screenshot harness renders the real panel with isolated sample data.
+No real startup switches are used by these checks.
+
 ## Isolated checks
 
 - 56 Python `unittest` cases pass using disposable configuration trees and an
@@ -45,7 +69,9 @@ cover direct status filtering, actionable empty results, installed picker
 search, returning to the previous startup search, and advanced filters on
 both monitors. Source expansion, system item filtering, panel bounds,
 application icons, and startup/running-state separation were inspected. Current runtime logs contain no omastart warnings
-or errors. `preview.png` is a direct cropped capture of the real panel.
+or errors. The original live captures remain in local verification artifacts.
+The 0.2.0 `preview.png` renders the actual panel with isolated sample data
+using `scripts/capture_ui.py`; it contains no surrounding desktop.
 
 No real startup toggles were invoked. File and symlink fingerprints were
 identical before and after the live acceptance run. Comparing the wider build

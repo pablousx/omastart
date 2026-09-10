@@ -9,29 +9,45 @@ Ui.ToggleSwitch {
     id: root
     required property var sourceItem
     required property var manager
+    property var applicationItem: null
     property string appName: sourceItem.name || "Application"
-    readonly property bool pending: manager.busy && manager.pendingId === sourceItem.id
-    checked: sourceItem.enabled === true
-    interactive: !sourceItem.readOnly
+    readonly property var preferred: applicationItem ? Model.preferredSource(applicationItem) : null
+    readonly property string blocked: applicationItem ? applicationItem.toggleReadOnly || "" : sourceItem.readOnly || ""
+    readonly property bool pending: manager.busy && manager.pendingId === (applicationItem ? applicationItem.id : sourceItem.id)
+    readonly property bool masksService: applicationItem
+        ? applicationItem.sources.some(function(s) { return s.enabled && s.globalEnabled }) : sourceItem.globalEnabled === true
+    readonly property string description: blocked || (pending ? "Saving startup setting" : applicationItem
+        ? checked ? "Disable every enabled startup method for this app"
+                  : "Enable at next login via " + (preferred ? Model.sourceLabel(preferred.kind) : "the preferred available method")
+        : (checked ? "Disable" : "Enable") + " at next login")
+    function activate() {
+        if (!interactive || busy) return
+        if (applicationItem) manager.changeApplication(applicationItem)
+        else manager.change(sourceItem)
+    }
+    rounded: true
+    checked: applicationItem ? applicationItem.startupEnabled === true : sourceItem.enabled === true
+    interactive: blocked === ""
+    opacity: interactive ? 1 : 0.45
     busy: manager.busy
     activeFocusOnTab: interactive
     hasCursor: activeFocus
     Accessible.role: Accessible.CheckBox
-    Accessible.name: "Start " + appName + " at login via " + Model.sourceLabel(sourceItem.kind)
+    Accessible.name: "Start " + appName + " at login" + (applicationItem ? "" : " via " + Model.sourceLabel(sourceItem.kind))
     Accessible.checked: checked
-    Accessible.description: sourceItem.readOnly || (pending ? "Saving startup setting" : "Applies at next login")
-    Accessible.onToggleAction: if (interactive && !busy) manager.change(sourceItem)
-    Keys.onSpacePressed: if (interactive && !busy) manager.change(sourceItem)
-    Keys.onReturnPressed: if (interactive && !busy) manager.change(sourceItem)
-    onToggled: manager.change(sourceItem)
+    Accessible.description: description
+    Accessible.onToggleAction: activate()
+    Keys.onSpacePressed: activate()
+    Keys.onReturnPressed: activate()
+    onToggled: activate()
+    HoverHandler { id: tooltipHover }
     Controls.ToolTip {
         id: tip
-        visible: root.containsMouse
+        visible: tooltipHover.hovered
         delay: 500
-        width: Style.space(root.sourceItem.globalEnabled ? 310 : 215)
+        width: Style.space(root.applicationItem || root.masksService ? 310 : 215)
         text: root.pending ? "Saving…" : root.busy ? "Checking startup settings…"
-            : (root.checked ? "Disable" : "Enable") + " at next login"
-                + (root.sourceItem.globalEnabled ? ". Turning this off also blocks manual starts until you enable it again." : "")
+            : root.description + (!root.blocked && root.masksService ? ". Turning this off also blocks manual starts until you enable that service again." : "")
         contentItem: Text {
             text: tip.text
             textFormat: Text.PlainText
