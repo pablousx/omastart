@@ -5,6 +5,6 @@ Text {
     textFormat: Text.PlainText
     color: Color.popups.text
     font.family: Style.font.family
-    font.pixelSize: Style.font.body
+    font.pixelSize: Style.space(12)
     elide: Text.ElideRight
 }

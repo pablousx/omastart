@@ -4,14 +4,43 @@ function sourceLabel(kind) {
     return {hyprland: "Hyprland", xdg: "XDG autostart", systemd: "User systemd"}[kind] || kind
 }
 
+function openingOrder(applications) {
+    return applications.slice().sort(function(a, b) {
+        if (!!a.enabled !== !!b.enabled) return a.enabled ? -1 : 1
+        var first = a.name.toLowerCase()
+        var second = b.name.toLowerCase()
+        return first < second ? -1 : first > second ? 1 : a.id.localeCompare(b.id)
+    }).map(function(app) { return app.id })
+}
+
+function ordered(applications, order) {
+    var remaining = new Map()
+    applications.forEach(function(app) { remaining.set(app.id, app) })
+    var result = []
+    order.forEach(function(id) {
+        if (remaining.has(id)) {
+            result.push(remaining.get(id))
+            remaining.delete(id)
+        }
+    })
+    // Newly discovered apps join the end without moving existing rows.
+    remaining.forEach(function(app) { result.push(app) })
+    return result
+}
+
 function filtered(applications, query, sourceFilter, statusFilter, showSystem) {
     var needle = String(query || "").trim().toLowerCase()
-    return applications.filter(function(app) {
-        return (showSystem || !app.system)
+    var readOnlyView = statusFilter === "readonly"
+    var matches = applications.filter(function(app) {
+        return (readOnlyView ? locked(app) : !locked(app))
+            && (readOnlyView || showSystem || !app.system)
             && (!needle || app.search.indexOf(needle) !== -1)
             && (sourceFilter === "all" || app.kinds.indexOf(sourceFilter) !== -1)
-            && (statusFilter === "all" || (statusFilter === "enabled" ? app.enabled : app.status === "Disabled"))
     })
+    if (!readOnlyView) return matches
+    return matches.filter(function(app) { return app.enabled })
+        .concat(matches.filter(function(app) { return !app.enabled && app.status !== "Disabled" }))
+        .concat(matches.filter(function(app) { return app.status === "Disabled" }))
 }
 
 function catalogFiltered(catalog, query) {
@@ -44,6 +73,18 @@ function findSource(applications, id) {
         }
     }
     return null
+}
+
+function findApplication(applications, id) {
+    return applications.find(function(app) { return app.id === id }) || null
+}
+
+function findRemoval(inventory, id) {
+    return (inventory.removed || []).find(function(app) { return app.id === id }) || null
+}
+
+function preferredSource(app) {
+    return (app.sources || []).find(function(source) { return source.id === app.preferredSource }) || null
 }
 
 function locked(app) {

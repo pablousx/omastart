@@ -9,26 +9,42 @@ autostart, and user systemd into one searchable application list.
 
 - **Plugin ID:** `io.github.pablousx.omastart`
 - **Author:** pablousx
-- **Version:** 0.1.0
+- **Version:** 0.2.0
 - **License:** MIT
 
 ## Use
 
-Click the launch-arrow bar widget. **All apps**, **Enabled**, and **Disabled**
-select a view directly. Search by application, command, path, or startup source;
+Click the launch-arrow bar widget. **Applications** shows editable items together,
+whether enabled or disabled. Each time the panel opens, enabled apps appear first,
+alphabetically within each group. The order stays fixed while changing settings,
+refreshing, searching, or switching tabs. Apps added with **Add app** go to the top;
+other newly discovered apps join the end. Reopening
+the panel sorts it again using the latest startup states.
+**Read-only** contains items whose startup methods are all
+read-only, including protected system items. Enabled items come first and
+disabled items last, preserving alphabetical order within each group.
+Search by application, command, path, or startup source;
 the clear button returns you to the list. **Filters** contains source choices
 and **Include system items**. Active filters remain visible when collapsed,
 and **Reset filters** clears them in one step.
 
-Switches save a specific startup source. The affected row shows **Saving…**
+An app's switch controls its startup methods together. Turning it off disables
+every enabled method in one reversible change. Turning it on enables one
+available, editable method that applies to the session: an existing Hyprland
+entry first (preferring `o.launch_on_start`), then XDG autostart, then a user
+systemd service. It does not create a method or enable duplicate launches.
+The tooltip identifies the method that will be enabled. An unknown state or
+an enabled read-only method blocks the app switch and explains why.
+
+The affected row shows **Saving…**
 until the confirmed configuration comes back. A message names the app and
 result, with **Undo** for a reversible change. Undo pauses its dismissal while
 you hover or focus the message and becomes unavailable if the source changes
 elsewhere. Failed saves keep the previous displayed state and offer Refresh.
 
 Click an app or its chevron for source controls. Apps with several independent
-sources expose each separately; turning one off reports if another remains
-enabled. **Why?** explains read-only items. Commands, paths, and running-state
+sources also expose each separately; turning one off reports if another remains
+enabled. The chevron opens explanations for read-only items. Commands, paths, and running-state
 metadata sit behind **Technical details**. Generated XDG systemd units belong
 to their desktop entry and are never counted or edited twice.
 
@@ -36,10 +52,21 @@ to their desktop entry and are never counted or edited twice.
 entry to your user autostart directory, preserving its command and actions.
 The picker stays open so you can add several apps. Existing entries offer
 **Manage**, which opens their startup settings. **Back** restores your previous
-search, filters, selection, and scroll position. No app is launched by the picker.
+search, filters, selection, and scroll position if nothing was added. After adding,
+Back shows the newest addition at the top of Applications. No app is launched by the picker.
+
+Disabling an app keeps its startup entry in the list so it can be enabled again.
+Once every method is disabled, **Remove** in its details removes it from the list
+without deleting its startup configuration or lifting service masks. **Undo**
+restores the disabled row. Installed apps can also be added back through **Add app**,
+which reuses an eligible existing method when available. Removed-item records are
+stored under `$XDG_CONFIG_HOME/omastart/removed`; changed startup configurations
+reappear rather than being silently hidden.
 
 The panel keeps a stable size during searches and updates. Expanding a row
 brings its controls into view; background refresh preserves your list position.
+Status labels and the feedback area reserve space so saving and Undo do not
+resize the list.
 Empty results explain what happened and offer a relevant action.
 
 Keyboard interaction:
@@ -178,7 +205,9 @@ private startup command arguments, so do not publish them.
 An ordinary failure rolls back only content still matching what omastart wrote.
 Concurrent external edits are preserved and reported. Interrupted transactions
 remain recorded for recovery. **Undo last change** restores a source's latest
-backup when it still matches the current configuration. An interrupted change
+backup when it still matches the current configuration. **Undo app startup
+change** restores all methods affected by an app switch together; those changes
+are not offered as separate source undos. An interrupted change
 offers **Restore interrupted change** when its files can safely be restored;
 otherwise it explains that external edits need review. Further startup changes
 are blocked until that interrupted transaction is resolved. Never blindly copy

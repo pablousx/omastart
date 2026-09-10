@@ -16,6 +16,8 @@ Ui.Panel {
     property var hostWidget: null
     property var inventory: ({applications: [], catalog: [], warnings: [], counts: {applications: 0, enabled: 0, system: 0}})
     property bool loaded: false
+    property var applicationOrder: []
+    property bool openingScanPending: true
     property bool busy: false
     property string error: ""
     property string message: ""
@@ -31,16 +33,21 @@ Ui.Panel {
     property string savedQuery: ""
     property real savedScroll: 0
     property string savedSelection: ""
+    property string pickerAddedId: ""
     property string undoId: ""
     property string undoRevision: ""
+    property bool undoApplication: false
+    property bool undoRemoval: false
     property int messageRemaining: 0
-    readonly property bool filtered: searchField.text.trim() !== "" || sourceFilter !== "all" || statusFilter !== "all" || showSystem
-    readonly property var undoSource: Model.findSource(inventory.applications, undoId)
+    readonly property bool readOnlyView: !adding && statusFilter === "readonly"
+    readonly property bool systemFilterActive: showSystem && !readOnlyView
+    readonly property bool filtered: searchField.text.trim() !== "" || sourceFilter !== "all" || statusFilter !== "all" || systemFilterActive
+    readonly property var undoSource: undoRemoval ? Model.findRemoval(inventory, undoId) : undoApplication ? Model.findApplication(inventory.applications, undoId) : Model.findSource(inventory.applications, undoId)
     readonly property bool canUndoMessage: !!undoSource && undoSource.canUndo === true && undoSource.revision === undoRevision
     readonly property bool mutating: busy && pendingRequest.action !== "scan"
     // Supplied only by the isolated QML harness. It disables every backend invocation.
     property var fixtureData: null
-    readonly property var applications: Model.filtered(inventory.applications, searchField.text, sourceFilter, statusFilter, showSystem)
+    readonly property var applications: Model.filtered(Model.ordered(inventory.applications, applicationOrder), searchField.text, sourceFilter, statusFilter, showSystem)
     readonly property var choices: Model.catalogFiltered(inventory.catalog, searchField.text)
     readonly property int displayedCount: adding ? choices.length : applications.length
     readonly property string backendPath: decodeURIComponent(Qt.resolvedUrl("backend/omastart.py").toString().replace(/^file:\/\//, ""))
@@ -48,6 +55,22 @@ Ui.Panel {
     function open() {
         root.controller.show()
         refresh()
+    }
+    onOpenedChanged: {
+        if (opened) {
+            applicationOrder = Model.openingOrder(inventory.applications)
+            openingScanPending = true
+            resetPosition()
+        }
+    }
+    function acceptInventory(next, fromScan, firstId) {
+        applicationOrder = !loaded || openingScanPending && fromScan
+            ? Model.openingOrder(next.applications)
+            : Model.ordered(next.applications, applicationOrder).map(function(app) { return app.id })
+        if (firstId) applicationOrder = [firstId].concat(applicationOrder.filter(function(id) { return id !== firstId }))
+        openingScanPending = false
+        inventory = next
+        loaded = true
     }
     function setSearch(value) { searchField.text = value }
     function focusSearch() { searchField.forceActiveFocus(); searchField.selectAll() }
@@ -61,6 +84,7 @@ Ui.Panel {
         searchField.forceActiveFocus()
     }
     function enterPicker() {
+        pickerAddedId = ""
         savedQuery = searchField.text
         savedScroll = listView.contentY
         savedSelection = listView.currentItem ? listView.currentItem.entry.id : ""
@@ -71,7 +95,12 @@ Ui.Panel {
     }
     function leavePicker() {
         adding = false
-        searchField.text = savedQuery
+        if (pickerAddedId) {
+            resetFilters()
+            savedScroll = 0
+            savedSelection = pickerAddedId
+            pickerAddedId = ""
+        } else searchField.text = savedQuery
         Qt.callLater(function() { root.restorePosition(root.savedScroll, root.savedSelection); searchField.forceActiveFocus() })
     }
     function handleEscape() {
@@ -122,15 +151,20 @@ Ui.Panel {
         if (!existing) return
         adding = false
         resetFilters()
+        if (Model.locked(existing)) statusFilter = "readonly"
+        else if (existing.system) showSystem = true
         searchField.text = existing.name
         expandedId = existing.id
     }
-    function dismissMessage() { message = ""; undoId = ""; undoRevision = "" }
+    function dismissMessage() { message = ""; undoId = ""; undoRevision = ""; undoApplication = false; undoRemoval = false }
     function undoLast() {
-        if (canUndoMessage) request({action: "undo", id: undoSource.id, revision: undoSource.revision, name: undoSource.name})
+        if (canUndoMessage) request({action: undoRemoval ? "undoRemoval" : undoApplication ? "undoApplication" : "undo", id: undoSource.id, revision: undoSource.revision, name: undoSource.name})
     }
     onSourceFilterChanged: resetPosition()
-    onStatusFilterChanged: resetPosition()
+    onStatusFilterChanged: {
+        if (statusFilter !== "all" && statusFilter !== "readonly") statusFilter = "all"
+        resetPosition()
+    }
     onShowSystemChanged: resetPosition()
     function inspect() {
         return {opened: opened, loaded: loaded, busy: busy, error: error, adding: adding, searchFocused: searchField.activeFocus,
@@ -140,11 +174,12 @@ Ui.Panel {
                 geometry: {x: popup.cardOrigin.x, y: popup.cardOrigin.y, width: popup.contentWidth, height: popup.contentHeight,
                            screen: "screen" in popup && popup.screen ? popup.screen.name : ""},
                 rows: applications.map(function(a) { return {id: a.id, name: a.name, status: a.status,
+                    startupEnabled: a.startupEnabled, preferredSource: a.preferredSource, toggleReadOnly: a.toggleReadOnly,
                     sources: a.sources.map(function(s) { return {id: s.id, kind: s.kind, enabled: s.enabled, readOnly: s.readOnly, generatedUnits: s.generatedUnits || []} })} })}
     }
     function request(payload) {
         if (busy || fixtureData !== null) return
-        if (payload.action !== "scan") { error = ""; dismissMessage() }
+        if (payload.action !== "scan") { error = ""; dismissMessage(); openingScanPending = false }
         pendingRequest = payload
         pendingId = payload.id || ""
         busy = true
@@ -153,16 +188,24 @@ Ui.Panel {
     }
     function refresh(manual) {
         if (manual) error = ""
-        if (fixtureData !== null) { inventory = fixtureData; loaded = true; return }
+        if (fixtureData !== null) { acceptInventory(fixtureData, true); return }
         request({action: "scan", manual: manual === true})
     }
     function change(item) {
         if (busy || item.readOnly) return
         request({action: "toggle", id: item.id, revision: item.revision, enabled: !item.enabled, name: item.name})
     }
+    function changeApplication(app) {
+        if (busy || app.toggleReadOnly) return
+        request({action: "toggleApplication", id: app.id, revision: app.revision, enabled: !app.startupEnabled, name: app.name})
+    }
     function addApplication(app) {
         if (app.exists || busy) return
         request({action: "add", id: app.id, revision: app.revision, name: app.name})
+    }
+    function removeApplication(app) {
+        if (busy || !app.canRemove) return
+        request({action: "remove", id: app.id, revision: app.revision, name: app.name})
     }
     function finish(output, errors, exitCode) {
         busy = false
@@ -177,24 +220,40 @@ Ui.Panel {
             var scrollY = listView.contentY
             var savedFocus = rememberListFocus()
             var selected = listView.currentItem ? listView.currentItem.entry.id : ""
-            inventory = result
-            loaded = true
+            var added = pendingRequest.action === "add" ? result.applications.find(function(app) {
+                return app.id === result.addedApplicationId || app.sources.some(function(source) { return source.id === "xdg:" + root.pendingRequest.id })
+            }) : null
+            acceptInventory(result, pendingRequest.action === "scan", added ? added.id : "")
+            if (added && adding) pickerAddedId = added.id
             if (pendingRequest.action && pendingRequest.action !== "scan") {
                 var action = pendingRequest.action
-                var changedId = action === "add" ? "xdg:" + pendingRequest.id : pendingRequest.id
-                var changed = Model.findSource(result.applications, changedId)
+                var addedAsApplication = action === "add" && result.addedApplicationUndo === "application"
+                var changedId = addedAsApplication ? result.addedApplicationId : action === "add" ? "xdg:" + pendingRequest.id : pendingRequest.id
+                var applicationChange = action === "toggleApplication" || action === "undoApplication" || addedAsApplication
+                var changed = action === "remove" ? Model.findRemoval(result, changedId) : applicationChange ? Model.findApplication(result.applications, changedId) : Model.findSource(result.applications, changedId)
                 var name = pendingRequest.name || (changed ? changed.name : "Startup setting")
                 message = action === "add" ? name + " added to startup."
-                    : action === "undo" ? "Previous startup setting restored."
+                    : action === "undo" || action === "undoApplication" ? "Previous startup setting restored."
+                    : action === "remove" ? name + " removed from the list. Startup methods stay disabled."
+                    : action === "undoRemoval" ? name + " restored to the list."
                     : action === "recover" ? "Interrupted change restored."
+                    : action === "toggleApplication" ? name + (pendingRequest.enabled ? " will start at login via "
+                        + (changed && Model.preferredSource(changed) ? Model.sourceLabel(Model.preferredSource(changed).kind) : "the selected method") + "." : " won't start at login.")
                     : name + (pendingRequest.enabled ? " will start at login." : " won't start at login through this source.")
                 if (action === "toggle" && !pendingRequest.enabled) {
                     var app = result.applications.find(function(a) { return a.sources.some(function(s) { return s.id === changedId }) })
                     message = name + (app && app.enabled ? " still has another enabled startup source." : " won't start at login.")
                 }
-                undoId = action === "toggle" || action === "add" ? changedId : ""
+                undoRemoval = action === "remove"
+                undoApplication = action === "toggleApplication" || addedAsApplication || !!result.applicationUndoId
+                if (result.applicationUndoId) {
+                    changedId = result.applicationUndoId
+                    changed = Model.findApplication(result.applications, changedId)
+                }
+                undoId = action === "toggle" || action === "add" || undoApplication || undoRemoval ? changedId : ""
                 undoRevision = changed ? changed.revision : ""
                 messageRemaining = 10000
+                if (action === "remove" && expandedId === pendingRequest.id) expandedId = ""
             } else if (result.message) { message = result.message; messageRemaining = 10000 }
             Qt.callLater(function() {
                 root.restorePosition(scrollY, savedFocus ? savedFocus.id : selected)
@@ -240,8 +299,8 @@ Ui.Panel {
         owner: root.hostWidget || root
         open: root.opened
         focusTarget: searchField
-        contentWidth: fittedContentWidth(Style.space(610))
-        contentHeight: cappedContentHeight(Style.space(760))
+        contentWidth: fittedContentWidth(Style.space(440))
+        contentHeight: cappedContentHeight(Style.space(650))
 
         FocusScope {
             anchors.fill: parent
@@ -256,55 +315,60 @@ Ui.Panel {
 
             ColumnLayout {
                 anchors.fill: parent
-                spacing: Style.space(12)
+                spacing: Style.space(14)
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: Style.space(12)
+                    spacing: Style.space(8)
+                    LaunchIcon { implicitWidth: Style.space(24); implicitHeight: Style.space(24); foreground: Color.popups.text }
+                    Label { text: "omastart"; font.pixelSize: Style.space(21); Layout.fillWidth: true }
+                    Label { text: "SESSION STARTUP"; font.pixelSize: Style.space(9); font.letterSpacing: 1; color: Qt.alpha(Color.popups.text, 0.65) }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: overview.implicitHeight + Style.space(26)
+                    radius: Style.space(8)
+                    color: Qt.alpha(Color.accent, 0.07)
+                    border.color: Qt.alpha(Color.accent, 0.16)
                     ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: Style.space(4)
-                        Label { text: root.adding ? "Add application" : "omastart"; font.pixelSize: Style.space(27); font.bold: true }
+                        id: overview
+                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Style.space(13) }
+                        spacing: Style.space(6)
                         Label {
                             Layout.fillWidth: true
-                            text: root.adding ? "Choose an installed app to start at login." : "Manage everything that starts with your Omarchy session."
+                            text: root.adding ? "Add application" : root.loaded ? root.inventory.counts.enabled + " apps enabled at login" : "Finding startup apps…"
+                            color: Color.accent
+                            font.pixelSize: Style.space(16)
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: root.adding ? "Choose an installed app to start when you sign in." : "Manage everything that starts with your session."
                             color: Qt.alpha(Color.popups.text, 0.70)
-                            font.pixelSize: Style.font.caption
+                            font.pixelSize: Style.space(11)
                             wrapMode: Text.WordWrap
                         }
                     }
-                    Ui.Button {
-                        text: root.adding ? "Back" : "+ Add app"
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Style.space(8)
+                    ActionButton {
+                        text: root.adding ? "Back to startup" : "+ Add app"
                         focusable: true
-                        bordered: true
                         enabled: root.loaded
                         selected: !root.adding
                         onClicked: { if (root.adding) root.leavePicker(); else root.enterPicker() }
                     }
-                    Ui.Button { text: "×"; fontSize: Style.space(24); focusable: true; tooltipText: "Close · Esc"; onClicked: root.close() }
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Label {
-                        Layout.fillWidth: true
-                        text: root.adding ? "Add as many apps as you need. They stay closed for now."
-                            : root.loaded ? root.inventory.counts.enabled + " of " + root.inventory.counts.applications + (root.inventory.counts.applications === 1 ? " app enabled at login" : " apps enabled at login")
-                            : "Finding your startup apps…"
-                        font.pixelSize: Style.font.caption
-                        color: Qt.alpha(Color.popups.text, 0.75)
-                        wrapMode: Text.WordWrap
-                    }
-                    Ui.Button {
+                    ActionButton {
                         objectName: "refreshButton"
                         text: root.busy && !root.mutating && (root.pendingRequest.manual || !root.loaded) ? "Refreshing…" : "Refresh"
-                        fontSize: Style.font.caption
                         focusable: true
                         enabled: !root.busy
-                        opacity: root.mutating ? 0.6 : 1
                         tooltipText: "Check for startup changes made elsewhere"
                         onClicked: root.refresh(true)
                     }
+                    Item { Layout.fillWidth: true }
                 }
 
                 RowLayout {
@@ -312,6 +376,14 @@ Ui.Panel {
                     spacing: Style.space(4)
                     Ui.TextField {
                         id: searchField
+                        font.pixelSize: Style.space(12)
+                        implicitHeight: Style.space(38)
+                        leftPadding: Style.space(12)
+                        background: Rectangle {
+                            radius: Style.space(6)
+                            color: Qt.alpha(Color.popups.text, 0.035)
+                            border.color: searchField.activeFocus ? Color.accent : Qt.alpha(Color.popups.text, 0.15)
+                        }
                         objectName: "searchField"
                         Layout.fillWidth: true
                         placeholderText: root.adding ? "Search installed applications…" : "Search startup apps…"
@@ -330,7 +402,7 @@ Ui.Panel {
                             event.accepted = true
                         }
                     }
-                    Ui.Button {
+                    ActionButton {
                         objectName: "clearSearchButton"
                         visible: searchField.text !== ""
                         text: "×"
@@ -346,8 +418,8 @@ Ui.Panel {
                     visible: !root.adding
                     spacing: Style.space(4)
                     Repeater {
-                        model: [{id:"all", title:"All apps"}, {id:"enabled", title:"Enabled"}, {id:"disabled", title:"Disabled"}]
-                        Ui.Button {
+                        model: [{id:"all", title:"Applications"}, {id:"readonly", title:"Read-only"}]
+                        ActionButton {
                             required property var modelData
                             objectName: "status-" + modelData.id
                             text: modelData.title
@@ -356,19 +428,19 @@ Ui.Panel {
                             Accessible.name: modelData.title
                             Accessible.checked: selected
                             focusable: true
-                            fontSize: Style.font.caption
+                            fontSize: Style.space(11)
                             horizontalPadding: Style.space(10)
                             onClicked: root.statusFilter = modelData.id
                         }
                     }
                     Item { Layout.fillWidth: true }
-                    Ui.Button {
+                    ActionButton {
                         objectName: "filtersButton"
-                        text: "Filters" + (root.sourceFilter !== "all" || root.showSystem ? " •" : "") + (root.filtersOpen ? " ⌃" : " ⌄")
-                        fontSize: Style.font.caption
+                        text: "Filters" + (root.sourceFilter !== "all" || root.systemFilterActive ? " •" : "") + (root.filtersOpen ? " ⌃" : " ⌄")
+                        fontSize: Style.space(11)
                         focusable: true
-                        selected: root.filtersOpen || root.sourceFilter !== "all" || root.showSystem
-                        tooltipText: "Filter by startup source or include system items"
+                        selected: root.filtersOpen || root.sourceFilter !== "all" || root.systemFilterActive
+                        tooltipText: root.readOnlyView ? "Filter by startup source" : "Filter by startup source or include system items"
                         onClicked: root.filtersOpen = !root.filtersOpen
                     }
                 }
@@ -378,15 +450,15 @@ Ui.Panel {
                     spacing: Style.space(5)
                     RowLayout {
                         Layout.fillWidth: true
-                        Label { text: "Source"; font.pixelSize: Style.font.caption; color: Qt.alpha(Color.popups.text, 0.7) }
+                        Label { text: "Source"; font.pixelSize: Style.space(11); color: Qt.alpha(Color.popups.text, 0.7) }
                         Repeater {
                             model: [{id:"all", title:"All"}, {id:"hyprland", title:"Hyprland"}, {id:"xdg", title:"XDG"}, {id:"systemd", title:"systemd"}]
-                            Ui.Button {
+                            ActionButton {
                                 required property var modelData
                                 text: modelData.title
                                 selected: root.sourceFilter === modelData.id
                                 focusable: true
-                                fontSize: Style.font.caption
+                                fontSize: Style.space(11)
                                 onClicked: root.sourceFilter = modelData.id
                             }
                         }
@@ -394,9 +466,10 @@ Ui.Panel {
                     }
                     RowLayout {
                         Layout.fillWidth: true
-                        Ui.Button {
+                        ActionButton {
+                            visible: !root.readOnlyView
                             text: (root.showSystem ? "▣ " : "□ ") + "Include system items"
-                            fontSize: Style.font.caption
+                            fontSize: Style.space(11)
                             focusable: true
                             selected: root.showSystem
                             Accessible.role: Accessible.CheckBox
@@ -404,47 +477,49 @@ Ui.Panel {
                             onClicked: root.showSystem = !root.showSystem
                         }
                         Item { Layout.fillWidth: true }
-                        Ui.Button { text: "Reset filters"; fontSize: Style.font.caption; focusable: true; onClicked: root.resetFilters() }
+                        ActionButton { text: "Reset filters"; link: true; fontSize: Style.space(11); focusable: true; onClicked: root.resetFilters() }
                     }
                 }
                 RowLayout {
                     Layout.fillWidth: true
-                    visible: !root.adding && !root.filtersOpen && (root.sourceFilter !== "all" || root.showSystem)
+                    visible: !root.adding && !root.filtersOpen && (root.sourceFilter !== "all" || root.systemFilterActive)
                     Label {
                         Layout.fillWidth: true
-                        text: (root.sourceFilter !== "all" ? Model.sourceLabel(root.sourceFilter) : "All sources") + (root.showSystem ? " · Including system items" : "")
-                        font.pixelSize: Style.font.caption
+                        text: (root.sourceFilter !== "all" ? Model.sourceLabel(root.sourceFilter) : "All sources") + (root.systemFilterActive ? " · Including system items" : "")
+                        font.pixelSize: Style.space(11)
                         color: Color.accent
                     }
-                    Ui.Button { text: "Reset"; fontSize: Style.font.caption; focusable: true; onClicked: root.resetFilters() }
+                    ActionButton { text: "Reset"; link: true; fontSize: Style.space(11); focusable: true; onClicked: root.resetFilters() }
                 }
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: noticeContents.implicitHeight + Style.space(18)
+                    implicitHeight: noticeContents.implicitHeight + Style.space(26)
                     visible: root.error !== "" || root.inventory.warnings.length > 0
-                    radius: Style.cornerRadius
-                    color: Qt.alpha(Color.urgent, 0.09)
+                    radius: Style.space(8)
+                    color: Qt.alpha(Color.urgent, 0.07)
+                    border.color: Qt.alpha(Color.urgent, 0.16)
                     ColumnLayout {
                         id: noticeContents
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.margins: Style.space(9)
-                        spacing: Style.space(5)
+                        anchors.margins: Style.space(13)
+                        spacing: Style.space(6)
                         RowLayout {
                             Layout.fillWidth: true
                             Label {
                                 Layout.fillWidth: true
-                                text: root.error ? "Couldn't complete the request" : "Some startup items need attention"
+                                text: root.error ? "Couldn't save changes" : "Needs attention"
                                 color: Color.urgent
-                                font.bold: true
-                                font.pixelSize: Style.font.caption
+                                font.bold: false
+                                font.pixelSize: Style.space(16)
                             }
-                            Ui.Button {
+                            ActionButton {
                                 text: root.error ? "Refresh" : root.warningDetails ? "Less" : "Details"
+                                link: true
                                 focusable: true
-                                fontSize: Style.font.caption
+                                fontSize: Style.space(11)
                                 enabled: !root.busy
                                 onClicked: { if (root.error) root.refresh(true); else root.warningDetails = !root.warningDetails }
                             }
@@ -452,10 +527,10 @@ Ui.Panel {
                         Label {
                             Layout.fillWidth: true
                             visible: root.error !== "" || root.warningDetails
-                            text: root.error || root.inventory.warnings.join("\n")
+                            text: root.error || root.inventory.warnings.map(function(warning) { return "• " + warning }).join("\n\n")
                             wrapMode: Text.Wrap
-                            maximumLineCount: 5
-                            font.pixelSize: Style.font.caption
+                            elide: Text.ElideNone
+                            font.pixelSize: Style.space(11)
                             color: Qt.alpha(Color.popups.text, 0.85)
                         }
                     }
@@ -463,7 +538,7 @@ Ui.Panel {
 
                 Repeater {
                     model: root.inventory.recoveries || []
-                    Ui.Button {
+                    ActionButton {
                         required property var modelData
                         visible: modelData.recoverable
                         text: "Restore interrupted change"
@@ -475,13 +550,21 @@ Ui.Panel {
                     }
                 }
 
+                Label {
+                    Layout.fillWidth: true
+                    text: root.adding ? "INSTALLED APPLICATIONS" : root.readOnlyView ? "READ-ONLY ITEMS" : "STARTUP APPLICATIONS"
+                    font.pixelSize: Style.space(10)
+                    font.letterSpacing: 1
+                    color: Qt.alpha(Color.popups.text, 0.65)
+                }
+
                 ListView {
                     id: listView
                     objectName: "applicationList"
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
-                    spacing: Style.space(5)
+                    spacing: Style.space(4)
                     boundsBehavior: Flickable.StopAtBounds
                     model: root.adding ? root.choices : root.applications
                     currentIndex: -1
@@ -520,23 +603,24 @@ Ui.Panel {
                             text: !root.loaded ? (root.busy ? "Finding your startup apps…" : "Startup information unavailable")
                                 : searchField.text.trim() ? "No apps found"
                                 : root.adding ? "No installed apps available"
-                                : root.statusFilter === "disabled" ? "No disabled apps"
-                                : root.statusFilter === "enabled" ? "No enabled apps" : "No startup apps yet"
+                                : root.readOnlyView ? "No read-only items"
+                                : "No startup apps yet"
                             horizontalAlignment: Text.AlignHCenter
-                            font.bold: true
-                            font.pixelSize: Style.font.subtitle
+                            font.bold: false
+                            font.pixelSize: Style.space(16)
                         }
                         Label {
                             width: parent.width
                             text: !root.loaded ? (root.busy ? "Checking your session’s startup settings." : "Refresh to try reading your startup settings again.")
                                 : searchField.text.trim() ? "Try another name or clear your search."
+                                : root.readOnlyView && root.sourceFilter === "all" ? "Read-only startup items, including protected system items, appear here."
                                 : root.filtered && !root.adding ? "Change the filters to see more apps."
                                 : root.adding ? "Apps with desktop entries will appear here." : "Add an installed app to open it when you sign in."
                             color: Qt.alpha(Color.popups.text, 0.70)
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.WordWrap
                         }
-                        Ui.Button {
+                        ActionButton {
                             anchors.horizontalCenter: parent.horizontalCenter
                             visible: !root.loaded || searchField.text !== "" || (!root.adding && (root.filtered || root.inventory.counts.applications === 0))
                             text: !root.loaded ? "Refresh" : searchField.text !== "" ? "Clear search" : root.filtered ? "Reset filters" : "+ Add app"
@@ -560,56 +644,66 @@ Ui.Panel {
                         Layout.fillWidth: true
                         text: root.displayedCount + (root.adding ? (root.displayedCount === 1 ? " installed app" : " installed apps") : (root.displayedCount === 1 ? " app shown" : " apps shown"))
                         color: Qt.alpha(Color.popups.text, 0.70)
-                        font.pixelSize: Style.font.caption
+                        font.pixelSize: Style.space(11)
                     }
                     Label {
                         text: root.adding ? "Enter to choose · Esc to go back" : "Click an app for details"
                         color: Qt.alpha(Color.popups.text, 0.60)
-                        font.pixelSize: Style.font.caption
+                        font.pixelSize: Style.space(11)
                     }
                 }
                 FocusScope {
                     id: feedback
+                    objectName: "feedback"
                     Layout.fillWidth: true
-                    implicitHeight: Style.space(52)
+                    // Reserve the same three-line message/action area at rest,
+                    // while saving, and after Undo appears or disappears.
+                    implicitHeight: Math.max(messageUndo.implicitHeight, feedbackMetrics.lineSpacing * 3) + Style.space(18)
+                    Layout.minimumHeight: implicitHeight
+                    Layout.maximumHeight: implicitHeight
+                    FontMetrics {
+                        id: feedbackMetrics
+                        font.family: Style.font.family
+                        font.pixelSize: Style.space(11)
+                    }
                     HoverHandler { id: feedbackHover }
                     Rectangle {
                         anchors.fill: parent
-                        radius: Style.cornerRadius
+                        radius: Style.space(8)
                         color: root.message ? Qt.alpha(Color.accent, 0.08) : "transparent"
                         Behavior on color { ColorAnimation { duration: 140 } }
                     }
                     RowLayout {
+                        id: feedbackRow
                         anchors.fill: parent
-                        anchors.margins: root.message ? Style.space(8) : 0
+                        anchors.margins: Style.space(9)
                         spacing: Style.space(5)
                         Label {
                             Layout.fillWidth: true
-                            text: root.message || "Changes apply at your next login. Running apps stay open."
+                            text: root.message || "Changes apply at next login. Running apps stay open."
                             color: root.message ? Color.accent : Qt.alpha(Color.popups.text, 0.70)
-                            font.pixelSize: Style.font.caption
+                            font.pixelSize: Style.space(11)
                             wrapMode: Text.WordWrap
                             maximumLineCount: 3
                             Accessible.role: Accessible.StaticText
                             Accessible.name: text
                         }
-                        Ui.Button {
-                            objectName: "messageUndoButton"
-                            visible: root.message !== "" && root.canUndoMessage
-                            text: "Undo"
-                            focusable: true
-                            bordered: true
-                            enabled: !root.busy
-                            onClicked: root.undoLast()
+                        Item {
+                            implicitWidth: messageUndo.implicitWidth
+                            implicitHeight: messageUndo.implicitHeight
+                            ActionButton {
+                                id: messageUndo
+                                objectName: "messageUndoButton"
+                                anchors.centerIn: parent
+                                visible: root.message !== "" && root.canUndoMessage
+                                text: "Undo"
+                                focusable: true
+                                bordered: true
+                                enabled: !root.busy
+                                onClicked: root.undoLast()
+                            }
                         }
-                        Ui.Button {
-                            visible: root.message !== ""
-                            text: "×"
-                            tooltipText: "Dismiss message"
-                            Accessible.name: "Dismiss message"
-                            focusable: true
-                            onClicked: root.dismissMessage()
-                        }
+
                     }
                 }
             }

@@ -6,6 +6,22 @@ from .support import Fixture
 
 
 class DesktopTests(Fixture):
+    def test_disabling_added_app_keeps_a_reenableable_entry(self):
+        self.desktop("sample", catalog=True)
+        choice = self.engine.scan()["catalog"][0]
+        self.engine.request({"action": "add", "id": choice["id"], "revision": choice["revision"]})
+        path = self.roots.autostart / "sample.desktop"
+        for _ in range(2):
+            self.toggle("xdg:sample.desktop", False)
+            self.assertTrue(path.exists())
+            item = self.item("xdg:sample.desktop")
+            self.assertFalse(item["enabled"])
+            self.assertFalse(item["readOnly"])
+            self.assertIn("Hidden=true", path.read_text())
+            self.assertTrue(self.engine.scan()["catalog"][0]["exists"])
+            self.toggle(item["id"], True)
+            self.assertTrue(self.item(item["id"])["enabled"])
+
     def test_vicinae_actions_and_exact_restore(self):
         path = self.desktop("vicinae", "vicinae server --replace", "Hidden=false\n\n[Desktop Action open]\nName=Open\nExec=vicinae open\n")
         original = path.read_bytes()
