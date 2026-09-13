@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """One request per process; stdout is exclusively a bounded JSON response."""
 import json
 from pathlib import Path

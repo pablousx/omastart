@@ -7,11 +7,77 @@ import sys
 import time
 from unittest.mock import patch
 
-from backend.common import Error, Store, file_value, snapshot
+from backend.common import Error, Store, bounded_process, closed_environment, file_value, run, snapshot
 from .support import Fixture
 
 
 class SafetyTests(Fixture):
+    def test_external_commands_use_absolute_identity_closed_environment_and_bounded_output(self):
+        with patch.dict(os.environ, {"OMASTART_UNTRUSTED": "present", "PATH": "/tmp/hostile"}):
+            result = bounded_process(
+                ["/usr/bin/python3", "-c",
+                 "import os; print(os.getenv('OMASTART_UNTRUSTED')); print(os.getenv('PATH'))"],
+                env=closed_environment(),
+            )
+        self.assertEqual(result.stdout.splitlines(), ["None", "None"])
+        with self.assertRaisesRegex(Error, "absolute"):
+            bounded_process(["python3", "-c", "pass"])
+        with self.assertRaisesRegex(Error, "safety limit"):
+            bounded_process(["/usr/bin/python3", "-c", "print('x' * 1000)"], stdout_limit=32)
+        with self.assertRaisesRegex(Error, "untrusted"):
+            run(["python3", "-c", "pass"])
+
+    def test_external_command_timeout_kills_process_group(self):
+        pid_file = Path(self.temporary.name) / "child.pid"
+        script = ("import pathlib,subprocess,time,sys; "
+                  "p=subprocess.Popen(['/usr/bin/sleep','30']); "
+                  "pathlib.Path(sys.argv[1]).write_text(str(p.pid)); time.sleep(30)")
+        started = time.monotonic()
+        with self.assertRaisesRegex(Error, "exceeded"):
+            bounded_process(["/usr/bin/python3", "-c", script, str(pid_file)], timeout=0.2)
+        self.assertLess(time.monotonic() - started, 2)
+        child = int(pid_file.read_text())
+        for _ in range(20):
+            if not Path(f"/proc/{child}").exists():
+                break
+            time.sleep(0.05)
+        self.assertFalse(Path(f"/proc/{child}").exists())
+
+    def test_external_command_deadline_includes_blocked_stdin(self):
+        started = time.monotonic()
+        with self.assertRaisesRegex(Error, "exceeded"):
+            bounded_process(["/usr/bin/python3", "-c", "import time; time.sleep(30)"],
+                            input="x" * 1_000_000, timeout=0.2)
+        self.assertLess(time.monotonic() - started, 2)
+
+    def test_external_command_cleans_descendants_after_direct_exit(self):
+        pid_file = Path(self.temporary.name) / "detached-child.pid"
+        script = ("import os,pathlib,subprocess,sys; "
+                  "p=subprocess.Popen(['/usr/bin/sleep','30'], stdin=subprocess.DEVNULL, "
+                  "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); "
+                  "pathlib.Path(sys.argv[1]).write_text(str(p.pid))")
+        result = bounded_process(["/usr/bin/python3", "-c", script, str(pid_file)])
+        self.assertEqual(result.returncode, 0)
+        child = int(pid_file.read_text())
+        for _ in range(20):
+            if not Path(f"/proc/{child}").exists():
+                break
+            time.sleep(0.05)
+        self.assertFalse(Path(f"/proc/{child}").exists())
+
+    def test_external_command_inherits_only_explicit_descriptors(self):
+        directory = os.open(self.temporary.name, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            result = bounded_process(
+                ["/usr/bin/python3", "-c",
+                 "import os,sys; print(os.readlink('/proc/self/fd/' + sys.argv[1]))",
+                 str(directory)],
+                pass_fds=(directory,),
+            )
+        finally:
+            os.close(directory)
+        self.assertEqual(Path(result.stdout.strip()), Path(self.temporary.name))
+
     def test_scan_has_no_filesystem_side_effects(self):
         self.desktop("example")
         before = sorted(str(p) for p in Path(self.temporary.name).rglob("*"))
@@ -84,8 +150,15 @@ class SafetyTests(Fixture):
     def test_failure_before_replace_preserves_original(self):
         path = self.desktop("example")
         original = path.read_bytes()
-        with patch("backend.common.os.replace", side_effect=OSError("simulated full disk")):
-            with self.assertRaises(OSError):
+        original_rename = os.rename
+
+        def fail_rename(src, dst, **kwargs):
+            if dst == path.name:
+                raise OSError("simulated full disk")
+            return original_rename(src, dst, **kwargs)
+
+        with patch("backend.common.os.rename", side_effect=fail_rename):
+            with self.assertRaisesRegex(Error, "rolled back"):
                 self.toggle("xdg:example.desktop", False)
         self.assertEqual(path.read_bytes(), original)
         self.assertEqual(list(path.parent.glob(".omastart-*")), [])
@@ -93,33 +166,58 @@ class SafetyTests(Fixture):
     def test_atomic_replace_exposes_complete_file(self):
         path = self.desktop("example")
         before = path.read_bytes()
-        real_replace = os.replace
+        real_rename = os.rename
         seen = []
 
-        def check_replace(src, dst):
-            if Path(dst) == path:
+        def check_replace(src, dst, **kwargs):
+            if dst == path.name:
                 self.assertEqual(path.read_bytes(), before)
-                seen.append(Path(src).read_bytes())
+                seen.append(Path(f"/proc/self/fd/{kwargs['src_dir_fd']}/{src}").read_bytes())
                 self.assertIn(b"Hidden=true", seen[-1])
-            return real_replace(src, dst)
+            return real_rename(src, dst, **kwargs)
 
-        with patch("backend.common.os.replace", side_effect=check_replace):
+        with patch("backend.common.os.rename", side_effect=check_replace):
             self.toggle("xdg:example.desktop", False)
         self.assertEqual(len(seen), 1)
+
+    def test_parent_substitution_cannot_redirect_final_replace(self):
+        path = self.desktop("example")
+        original_parent = path.parent
+        pinned_parent = self.roots.config / "pinned-autostart"
+        outside = self.roots.home / "outside"
+        outside.mkdir()
+        (outside / path.name).write_text("outside")
+        replace = self.engine.store._replace_at
+        substituted = False
+
+        def swap_then_replace(parent_fd, name, value):
+            nonlocal substituted
+            if name == path.name and not substituted:
+                original_parent.rename(pinned_parent)
+                original_parent.symlink_to(outside, target_is_directory=True)
+                substituted = True
+            return replace(parent_fd, name, value)
+
+        item = self.item("xdg:example.desktop")
+        with patch.object(self.engine.store, "_replace_at", side_effect=swap_then_replace):
+            self.engine.request({"action": "toggle", "id": item["id"],
+                                 "revision": item["revision"], "enabled": False})
+        self.assertEqual((outside / path.name).read_text(), "outside")
+        self.assertIn("Hidden=true", (pinned_parent / path.name).read_text())
 
     def test_interruption_keeps_prepared_journal_and_original_backup(self):
         path = self.desktop("example")
         store = self.engine.store
         before = snapshot(path)
         replacement = file_value(b"changed")
-        real_replace = store._replace
+        real_replace = store._replace_at
 
-        def interrupt(destination, value, **kwargs):
-            real_replace(destination, value, **kwargs)
-            if destination == path:
+        def interrupt(parent_fd, name, value):
+            real_replace(parent_fd, name, value)
+            if name == path.name:
                 raise KeyboardInterrupt("simulated process crash")
 
-        with store.locked(), patch.object(store, "_replace", side_effect=interrupt):
+        with store.locked(), patch.object(store, "_replace_at", side_effect=interrupt):
             with self.assertRaises(KeyboardInterrupt):
                 store.transact("xdg:example.desktop", [(path, before, replacement)])
         record = json.loads(next((self.roots.state / "transactions").glob("*.json")).read_text())

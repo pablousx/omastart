@@ -146,14 +146,14 @@ class RemovalTests(Fixture):
     def test_failed_remove_leaves_the_app_visible_and_disabled(self):
         app = self.add_disabled()
         marker = removal.path_for(self.roots, app['id'])
-        replace = self.engine.store._replace
+        replace = self.engine.store._replace_at
 
-        def fail(path, value, **kwargs):
-            if path == marker:
+        def fail(parent_fd, name, value):
+            if name == marker.name:
                 raise Error('simulated failure')
-            return replace(path, value, **kwargs)
+            return replace(parent_fd, name, value)
 
-        with patch.object(self.engine.store, '_replace', side_effect=fail):
+        with patch.object(self.engine.store, '_replace_at', side_effect=fail):
             with self.assertRaisesRegex(Error, 'rolled back'):
                 self.remove()
         self.assertEqual(self.app()['id'], app['id'])
@@ -163,14 +163,14 @@ class RemovalTests(Fixture):
         app = self.add_disabled()
         marker = removal.path_for(self.roots, app['id'])
         before = snapshot(self.roots.autostart / 'sample.desktop')
-        replace = self.engine.store._replace
+        replace = self.engine.store._replace_at
 
-        def interrupt(path, value, **kwargs):
-            replace(path, value, **kwargs)
-            if path == marker:
+        def interrupt(parent_fd, name, value):
+            replace(parent_fd, name, value)
+            if name == marker.name:
                 raise KeyboardInterrupt('simulated interruption')
 
-        with patch.object(self.engine.store, '_replace', side_effect=interrupt):
+        with patch.object(self.engine.store, '_replace_at', side_effect=interrupt):
             with self.assertRaises(KeyboardInterrupt):
                 self.remove()
         recovery = self.engine.scan()['recoveries'][0]

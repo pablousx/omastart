@@ -28,6 +28,10 @@ Ui.Panel {
     property string expandedId: ""
     property string pendingId: ""
     property var pendingRequest: ({})
+    property bool requestTimedOut: false
+    property bool responseExceeded: false
+    property string processOutput: ""
+    property string processErrors: ""
     property bool filtersOpen: false
     property bool warningDetails: false
     property string savedQuery: ""
@@ -51,6 +55,7 @@ Ui.Panel {
     readonly property var choices: Model.catalogFiltered(inventory.catalog, searchField.text)
     readonly property int displayedCount: adding ? choices.length : applications.length
     readonly property string backendPath: decodeURIComponent(Qt.resolvedUrl("backend/omastart.py").toString().replace(/^file:\/\//, ""))
+    readonly property string bridgePath: decodeURIComponent(Qt.resolvedUrl("backend/bridge.py").toString().replace(/^file:\/\//, ""))
 
     function open() {
         root.controller.show()
@@ -181,10 +186,15 @@ Ui.Panel {
         if (busy || fixtureData !== null) return
         if (payload.action !== "scan") { error = ""; dismissMessage(); openingScanPending = false }
         pendingRequest = payload
+        requestTimedOut = false
+        responseExceeded = false
+        processOutput = ""
+        processErrors = ""
         pendingId = payload.id || ""
         busy = true
-        process.command = ["python3", "-B", root.backendPath, JSON.stringify(payload)]
+        process.command = ["/usr/bin/python3", "-I", "-B", root.bridgePath, root.backendPath, JSON.stringify(payload)]
         process.running = true
+        requestTimer.restart()
     }
     function refresh(manual) {
         if (manual) error = ""
@@ -206,6 +216,17 @@ Ui.Panel {
     function removeApplication(app) {
         if (busy || !app.canRemove) return
         request({action: "remove", id: app.id, revision: app.revision, name: app.name})
+    }
+    function captureProcessOutput(data, isError) {
+        var current = isError ? processErrors : processOutput
+        var limit = isError ? 64000 : 2000000
+        if (current.length + data.length > limit) {
+            responseExceeded = true
+            if (process.running) process.signal(9)
+            return
+        }
+        if (isError) processErrors += data
+        else processOutput += data
     }
     function finish(output, errors, exitCode) {
         busy = false
@@ -267,12 +288,54 @@ Ui.Panel {
 
     Process {
         id: process
-        stdout: StdioCollector { id: output }
-        stderr: StdioCollector { id: errors }
+        clearEnvironment: true
+        environment: Object.assign({}, {
+            "HOME": Quickshell.env("HOME"),
+            "USER": Quickshell.env("USER"),
+            "LOGNAME": Quickshell.env("LOGNAME"),
+            "XDG_CONFIG_HOME": Quickshell.env("XDG_CONFIG_HOME"),
+            "XDG_STATE_HOME": Quickshell.env("XDG_STATE_HOME"),
+            "XDG_DATA_HOME": Quickshell.env("XDG_DATA_HOME"),
+            "XDG_CONFIG_DIRS": Quickshell.env("XDG_CONFIG_DIRS"),
+            "XDG_DATA_DIRS": Quickshell.env("XDG_DATA_DIRS"),
+            "XDG_RUNTIME_DIR": Quickshell.env("XDG_RUNTIME_DIR"),
+            "XDG_CURRENT_DESKTOP": Quickshell.env("XDG_CURRENT_DESKTOP"),
+            "DBUS_SESSION_BUS_ADDRESS": Quickshell.env("DBUS_SESSION_BUS_ADDRESS"),
+            "LANG": Quickshell.env("LANG"),
+            "LC_MESSAGES": Quickshell.env("LC_MESSAGES"),
+            "LC_ALL": "C",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "SYSTEMD_COLORS": "0"
+        })
+        stdout: SplitParser { onRead: function(data) { root.captureProcessOutput(data, false) } }
+        stderr: SplitParser { onRead: function(data) { root.captureProcessOutput(data, true) } }
         onExited: function(exitCode) {
-            var out = output.text
-            var err = errors.text
+            requestTimer.stop()
+            if (root.requestTimedOut) {
+                root.busy = false
+                root.pendingId = ""
+                root.pendingRequest = ({})
+                return
+            }
+            if (root.responseExceeded) {
+                root.busy = false
+                root.pendingId = ""
+                root.pendingRequest = ({})
+                root.error = "The backend response exceeded its safety limit. Refresh and try again."
+                return
+            }
+            var out = root.processOutput
+            var err = root.processErrors
             Qt.callLater(function() { root.finish(out, err, exitCode) })
+        }
+    }
+    Timer {
+        id: requestTimer
+        interval: 22000
+        onTriggered: {
+            root.requestTimedOut = true
+            if (process.running) process.signal(9)
+            root.error = "The backend request exceeded its time limit. Refresh and try again."
         }
     }
     Timer {
