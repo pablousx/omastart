@@ -9,7 +9,7 @@ autostart, and user systemd into one searchable application list.
 
 - **Plugin ID:** `io.github.pablousx.omastart`
 - **Author:** pablousx
-- **Version:** 0.2.0
+- **Version:** 0.2.1
 - **License:** MIT
 
 ## Use
@@ -193,9 +193,18 @@ startup commands and Lua configuration are never executed by the backend.
 
 Every change takes a process lock, rescans its source, checks the displayed
 revision, and journals the original file bytes or symlink before changing it.
-Files use same-directory temporary files, `fsync`, and atomic replacement.
-The journal preserves file modes. Symlinked files and parent directories that
-would make an edit ambiguous are read-only.
+Configuration and recovery parents are opened descriptor-relatively with
+`O_NOFOLLOW` and remain pinned through compare, write, rollback, and replacement.
+Files use same-directory temporary files, `fsync`, and atomic descriptor-relative
+renames. The journal preserves file modes. Symlinked files and parent directories
+that would make an edit ambiguous are read-only. The local installer applies the
+same no-follow, pinned-directory boundary to staging, backups, and installation.
+
+The panel invokes `/usr/bin/python3` in isolated mode through a small response
+bridge. Both layers use a closed environment, bounded stdout/stderr, and hard
+request deadlines. External `systemctl` and `luac` calls use fixed absolute paths,
+bounded nonblocking pipes, and their own process groups; timeout and completion
+clean up the complete process group, including lingering descendants.
 
 Backups live under `$XDG_STATE_HOME/omastart/transactions` (by default
 `~/.local/state/omastart/transactions`) as private JSON records. File contents

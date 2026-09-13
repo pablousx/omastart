@@ -198,14 +198,14 @@ class ApplicationTests(Fixture):
         self.methods()
         before = snapshot(self.roots.lua)
         store = self.engine.store
-        replace = store._replace
+        replace = store._replace_at
 
-        def interrupt(path, value, **kwargs):
-            replace(path, value, **kwargs)
-            if path == self.roots.autostart / 'vicinae.desktop':
+        def interrupt(parent_fd, name, value):
+            replace(parent_fd, name, value)
+            if name == 'vicinae.desktop':
                 raise KeyboardInterrupt('simulated interruption')
 
-        with patch.object(store, '_replace', side_effect=interrupt):
+        with patch.object(store, '_replace_at', side_effect=interrupt):
             with self.assertRaises(KeyboardInterrupt):
                 self.change_app(False)
         recovery = self.engine.scan()['recoveries'][0]
