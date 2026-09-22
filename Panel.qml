@@ -362,8 +362,8 @@ Ui.Panel {
         owner: root.hostWidget || root
         open: root.opened
         focusTarget: searchField
-        contentWidth: fittedContentWidth(Style.space(440))
-        contentHeight: cappedContentHeight(Style.space(650))
+        contentWidth: fittedContentWidth(Style.space(400))
+        contentHeight: cappedContentHeight(Style.space(620))
 
         FocusScope {
             anchors.fill: parent
@@ -378,75 +378,82 @@ Ui.Panel {
 
             ColumnLayout {
                 anchors.fill: parent
-                spacing: Style.space(14)
+                spacing: Style.space(12)
 
-                RowLayout {
+                Item {
                     Layout.fillWidth: true
-                    spacing: Style.space(8)
-                    LaunchIcon { implicitWidth: Style.space(24); implicitHeight: Style.space(24); foreground: Color.popups.text }
-                    Label { text: "omastart"; font.pixelSize: Style.space(21); Layout.fillWidth: true }
-                    Label { text: "SESSION STARTUP"; font.pixelSize: Style.space(9); font.letterSpacing: 1; color: Qt.alpha(Color.popups.text, 0.65) }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: overview.implicitHeight + Style.space(26)
-                    radius: Style.space(8)
-                    color: Qt.alpha(Color.accent, 0.07)
-                    border.color: Qt.alpha(Color.accent, 0.16)
+                    implicitHeight: Math.max(heroIcon.implicitHeight, heroLabels.implicitHeight, heroActions.implicitHeight)
+                    LaunchIcon {
+                        id: heroIcon
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitWidth: Style.space(24)
+                        implicitHeight: Style.space(24)
+                        foreground: Color.popups.text
+                    }
                     ColumnLayout {
-                        id: overview
-                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Style.space(13) }
-                        spacing: Style.space(6)
+                        id: heroLabels
+                        anchors.left: heroIcon.right
+                        anchors.leftMargin: Style.space(12)
+                        anchors.right: heroActions.left
+                        anchors.rightMargin: Style.space(8)
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Style.space(2)
                         Label {
                             Layout.fillWidth: true
-                            text: root.adding ? "Add application" : root.loaded ? root.inventory.counts.enabled + " apps enabled at login" : "Finding startup apps…"
-                            color: Color.accent
+                            text: root.adding ? "Add application" : "omastart"
                             font.pixelSize: Style.space(16)
+                            font.bold: true
                         }
                         Label {
                             Layout.fillWidth: true
-                            text: root.adding ? "Choose an installed app to start when you sign in." : "Manage everything that starts with your session."
-                            color: Qt.alpha(Color.popups.text, 0.70)
-                            font.pixelSize: Style.space(11)
-                            wrapMode: Text.WordWrap
+                            text: (root.adding ? "CHOOSE AN INSTALLED APP"
+                                : root.loaded ? root.inventory.counts.enabled + (root.inventory.counts.enabled === 1 ? " APP ENABLED AT LOGIN" : " APPS ENABLED AT LOGIN")
+                                : "FINDING STARTUP APPS…")
+                            color: Qt.darker(Color.popups.text, 1.4)
+                            font.pixelSize: Style.font.caption
+                            font.bold: true
+                            font.letterSpacing: 1.2
                         }
                     }
-                }
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Style.space(8)
-                    ActionButton {
-                        text: root.adding ? "Back to startup" : "+ Add app"
+                    RowLayout {
+                        id: heroActions
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Style.space(2)
+                        ActionButton {
+                        text: root.adding ? "‹" : "+"
+                        iconOnly: true
+                        fontSize: Style.space(16)
+                        tooltipText: root.adding ? "Back to startup" : "Add application"
+                        Accessible.name: tooltipText
                         focusable: true
                         enabled: root.loaded
-                        selected: !root.adding
                         onClicked: { if (root.adding) root.leavePicker(); else root.enterPicker() }
-                    }
-                    ActionButton {
+                        }
+                        ActionButton {
                         objectName: "refreshButton"
-                        text: root.busy && !root.mutating && (root.pendingRequest.manual || !root.loaded) ? "Refreshing…" : "Refresh"
+                        text: root.busy && !root.mutating && (root.pendingRequest.manual || !root.loaded) ? "…" : "󰑐"
+                        iconOnly: true
+                        fontSize: Style.space(16)
                         focusable: true
                         enabled: !root.busy
                         tooltipText: "Check for startup changes made elsewhere"
+                        Accessible.name: root.busy ? "Refreshing startup applications" : "Refresh startup applications"
                         onClicked: root.refresh(true)
+                        }
                     }
-                    Item { Layout.fillWidth: true }
                 }
+
+                Ui.PanelSeparator { Layout.fillWidth: true; foreground: Color.popups.text }
 
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: Style.space(4)
                     Ui.TextField {
                         id: searchField
-                        font.pixelSize: Style.space(12)
-                        implicitHeight: Style.space(38)
-                        leftPadding: Style.space(12)
-                        background: Rectangle {
-                            radius: Style.space(6)
-                            color: Qt.alpha(Color.popups.text, 0.035)
-                            border.color: searchField.activeFocus ? Color.accent : Qt.alpha(Color.popups.text, 0.15)
-                        }
+                        font.pixelSize: Style.font.body
+                        foreground: Color.popups.text
                         objectName: "searchField"
                         Layout.fillWidth: true
                         placeholderText: root.adding ? "Search installed applications…" : "Search startup apps…"
@@ -469,6 +476,7 @@ Ui.Panel {
                         objectName: "clearSearchButton"
                         visible: searchField.text !== ""
                         text: "×"
+                        iconOnly: true
                         tooltipText: "Clear search · Esc"
                         Accessible.name: "Clear search"
                         focusable: true
@@ -513,7 +521,7 @@ Ui.Panel {
                     spacing: Style.space(5)
                     RowLayout {
                         Layout.fillWidth: true
-                        Label { text: "Source"; font.pixelSize: Style.space(11); color: Qt.alpha(Color.popups.text, 0.7) }
+                        Label { text: "Source"; font.pixelSize: Style.space(11); color: Qt.darker(Color.popups.text, 1.4) }
                         Repeater {
                             model: [{id:"all", title:"All"}, {id:"hyprland", title:"Hyprland"}, {id:"xdg", title:"XDG"}, {id:"systemd", title:"systemd"}]
                             ActionButton {
@@ -540,7 +548,7 @@ Ui.Panel {
                             onClicked: root.showSystem = !root.showSystem
                         }
                         Item { Layout.fillWidth: true }
-                        ActionButton { text: "Reset filters"; link: true; fontSize: Style.space(11); focusable: true; onClicked: root.resetFilters() }
+                        ActionButton { text: "Reset"; link: true; fontSize: Style.space(11); focusable: true; onClicked: root.resetFilters() }
                     }
                 }
                 RowLayout {
@@ -555,47 +563,38 @@ Ui.Panel {
                     ActionButton { text: "Reset"; link: true; fontSize: Style.space(11); focusable: true; onClicked: root.resetFilters() }
                 }
 
-                Rectangle {
+                ColumnLayout {
                     Layout.fillWidth: true
-                    implicitHeight: noticeContents.implicitHeight + Style.space(26)
                     visible: root.error !== "" || root.inventory.warnings.length > 0
-                    radius: Style.space(8)
-                    color: Qt.alpha(Color.urgent, 0.07)
-                    border.color: Qt.alpha(Color.urgent, 0.16)
-                    ColumnLayout {
-                        id: noticeContents
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.margins: Style.space(13)
-                        spacing: Style.space(6)
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Label {
-                                Layout.fillWidth: true
-                                text: root.error ? "Couldn't save changes" : "Needs attention"
-                                color: Color.urgent
-                                font.bold: false
-                                font.pixelSize: Style.space(16)
-                            }
-                            ActionButton {
-                                text: root.error ? "Refresh" : root.warningDetails ? "Less" : "Details"
-                                link: true
-                                focusable: true
-                                fontSize: Style.space(11)
-                                enabled: !root.busy
-                                onClicked: { if (root.error) root.refresh(true); else root.warningDetails = !root.warningDetails }
-                            }
-                        }
+                    spacing: Style.space(6)
+                    Ui.PanelSeparator { Layout.fillWidth: true; foreground: Color.popups.text }
+                    RowLayout {
+                        Layout.fillWidth: true
                         Label {
                             Layout.fillWidth: true
-                            visible: root.error !== "" || root.warningDetails
-                            text: root.error || root.inventory.warnings.map(function(warning) { return "• " + warning }).join("\n\n")
-                            wrapMode: Text.Wrap
-                            elide: Text.ElideNone
-                            font.pixelSize: Style.space(11)
-                            color: Qt.alpha(Color.popups.text, 0.85)
+                            text: (root.error ? "COULDN'T SAVE CHANGES" : "NEEDS ATTENTION")
+                            color: Color.urgent
+                            font.bold: true
+                            font.pixelSize: Style.font.caption
+                            font.letterSpacing: 1
                         }
+                        ActionButton {
+                            text: root.error ? "Refresh" : root.warningDetails ? "Less" : "Details"
+                            link: true
+                            focusable: true
+                            fontSize: Style.space(11)
+                            enabled: !root.busy
+                            onClicked: { if (root.error) root.refresh(true); else root.warningDetails = !root.warningDetails }
+                        }
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: root.error !== "" || root.warningDetails
+                        text: root.error || root.inventory.warnings.map(function(warning) { return "• " + warning }).join("\n\n")
+                        wrapMode: Text.Wrap
+                        elide: Text.ElideNone
+                        font.pixelSize: Style.space(11)
+                        color: Qt.alpha(Color.popups.text, 0.85)
                     }
                 }
 
@@ -613,12 +612,14 @@ Ui.Panel {
                     }
                 }
 
-                Label {
+                Ui.PanelSeparator { Layout.fillWidth: true; foreground: Color.popups.text }
+
+                Ui.PanelSectionHeader {
                     Layout.fillWidth: true
-                    text: root.adding ? "INSTALLED APPLICATIONS" : root.readOnlyView ? "READ-ONLY ITEMS" : "STARTUP APPLICATIONS"
-                    font.pixelSize: Style.space(10)
-                    font.letterSpacing: 1
-                    color: Qt.alpha(Color.popups.text, 0.65)
+                    text: (root.adding ? "INSTALLED APPLICATIONS" : root.readOnlyView ? "READ-ONLY ITEMS" : "STARTUP APPLICATIONS")
+                        + (root.displayedCount > 0 ? "  " + root.displayedCount : "")
+                    foreground: Color.popups.text
+                    fontFamily: Style.font.family
                 }
 
                 ListView {
@@ -627,7 +628,7 @@ Ui.Panel {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
-                    spacing: Style.space(4)
+                    spacing: Style.space(2)
                     boundsBehavior: Flickable.StopAtBounds
                     model: root.adding ? root.choices : root.applications
                     currentIndex: -1
@@ -647,7 +648,7 @@ Ui.Panel {
                     delegate: ApplicationRow {
                         required property var modelData
                         required property int index
-                        width: listView.width - Style.space(8)
+                        width: listView.width
                         entry: modelData
                         manager: root
                         picker: root.adding
@@ -700,28 +701,14 @@ Ui.Panel {
                     }
                 }
 
-                Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.alpha(Color.foreground, 0.12) }
-                RowLayout {
-                    Layout.fillWidth: true
-                    Label {
-                        Layout.fillWidth: true
-                        text: root.displayedCount + (root.adding ? (root.displayedCount === 1 ? " installed app" : " installed apps") : (root.displayedCount === 1 ? " app shown" : " apps shown"))
-                        color: Qt.alpha(Color.popups.text, 0.70)
-                        font.pixelSize: Style.space(11)
-                    }
-                    Label {
-                        text: root.adding ? "Enter to choose · Esc to go back" : "Click an app for details"
-                        color: Qt.alpha(Color.popups.text, 0.60)
-                        font.pixelSize: Style.space(11)
-                    }
-                }
+                Ui.PanelSeparator { Layout.fillWidth: true; foreground: Color.popups.text }
                 FocusScope {
                     id: feedback
                     objectName: "feedback"
                     Layout.fillWidth: true
                     // Reserve the same three-line message/action area at rest,
                     // while saving, and after Undo appears or disappears.
-                    implicitHeight: Math.max(messageUndo.implicitHeight, feedbackMetrics.lineSpacing * 3) + Style.space(18)
+                    implicitHeight: Math.max(messageUndo.implicitHeight, feedbackMetrics.lineSpacing * 3) + Style.space(8)
                     Layout.minimumHeight: implicitHeight
                     Layout.maximumHeight: implicitHeight
                     FontMetrics {
@@ -739,13 +726,14 @@ Ui.Panel {
                     RowLayout {
                         id: feedbackRow
                         anchors.fill: parent
-                        anchors.margins: Style.space(9)
+                        anchors.leftMargin: Style.space(2)
+                        anchors.rightMargin: Style.space(2)
                         spacing: Style.space(5)
                         Label {
                             Layout.fillWidth: true
-                            text: root.message || "Changes apply at next login. Running apps stay open."
-                            color: root.message ? Color.accent : Qt.alpha(Color.popups.text, 0.70)
-                            font.pixelSize: Style.space(11)
+                            text: root.message || (root.adding ? "Enter to choose · Esc to go back" : "Changes apply at next login. Running apps stay open.")
+                            color: root.message ? Color.accent : Qt.darker(Color.popups.text, 1.5)
+                            font.pixelSize: Style.font.caption
                             wrapMode: Text.WordWrap
                             maximumLineCount: 3
                             Accessible.role: Accessible.StaticText

@@ -13,7 +13,7 @@ Controls.Button {
     property real fontSize: Style.space(12)
     horizontalPadding: Style.space(12)
     readonly property color tint: selected || link ? Color.accent : Color.popups.text
-    implicitHeight: Math.max(Style.space(38), label.implicitHeight + Style.space(18))
+    implicitHeight: Math.max(Style.space(32), label.implicitHeight + Style.space(12))
     implicitWidth: label.implicitWidth + horizontalPadding * 2
     focusPolicy: focusable ? Qt.StrongFocus : Qt.NoFocus
     hoverEnabled: true
@@ -37,8 +37,10 @@ Controls.Button {
     }
     background: Rectangle {
         visible: !control.iconOnly
-        radius: Style.space(6)
-        color: Qt.alpha(control.tint, control.down ? 0.22 : control.hovered ? 0.14 : control.link ? 0 : control.selected ? 0.10 : 0.045)
+        radius: Style.cornerRadius
+        color: control.down ? Style.pressedFillFor(Color.popups.text, Color.accent)
+            : control.hovered || control.activeFocus ? Style.hoverFillFor(Color.popups.text, Color.accent)
+            : control.selected ? Style.selectedFillFor(Color.popups.text, Color.accent) : "transparent"
         border.width: control.link && !control.activeFocus ? 0 : 1
         border.color: control.activeFocus ? Color.accent : Qt.alpha(control.tint, control.selected ? 0.45 : 0.15)
         Behavior on color { ColorAnimation { duration: 100 } }

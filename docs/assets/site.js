@@ -36,7 +36,7 @@
     const filters = [...document.querySelectorAll("[data-filter]")];
     const undo = document.querySelector("[data-undo]");
     const message = document.querySelector("[data-demo-message]");
-    let filter = "all";
+    let filter = "applications";
     let lastChange = null;
     function render() {
       const enabled = rows.filter(
@@ -45,14 +45,18 @@
       document.querySelector("[data-enabled-count]").textContent = enabled;
       rows.forEach((row) => {
         const on = row.dataset.enabled === "true";
-        row
-          .querySelector('[role="switch"]')
-          .setAttribute("aria-checked", String(on));
-        row.hidden = filter !== "all" && on !== (filter === "enabled");
+        const readonly = row.dataset.readonly === "true";
+        const switcher = row.querySelector('[role="switch"]');
+        if (switcher) switcher.setAttribute("aria-checked", String(on));
+        row.hidden =
+          (filter === "applications" && readonly) ||
+          (filter === "readonly" && !readonly);
       });
-      document.querySelector(".demo-empty").hidden = rows.some(
-        (row) => !row.hidden,
-      );
+      const visible = rows.filter((row) => !row.hidden).length;
+      document.querySelector("[data-demo-count]").textContent = visible;
+      document.querySelector("[data-demo-section]").textContent =
+        filter === "readonly" ? "READ-ONLY ITEMS" : "STARTUP APPLICATIONS";
+      document.querySelector(".demo-empty").hidden = visible !== 0;
       filters.forEach((button) =>
         button.setAttribute(
           "aria-pressed",
@@ -62,7 +66,8 @@
       undo.hidden = !lastChange;
     }
     rows.forEach((row) => {
-      const button = row.querySelector("button");
+      const button = row.querySelector('[role="switch"]');
+      if (!button) return;
       button.disabled = false;
       button.addEventListener("click", () => {
         lastChange = { row, enabled: row.dataset.enabled };
@@ -91,7 +96,7 @@
       render();
       (row.hidden
         ? filters.find((button) => button.dataset.filter === filter)
-        : row.querySelector("button")
+        : row.querySelector('[role="switch"]')
       ).focus({ preventScroll: true });
     });
     render();

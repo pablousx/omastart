@@ -80,7 +80,7 @@
               >
             </div>
             <p class="release">
-              <span>v0.2.1</span> Free &amp; open source
+              <span>v0.3.0</span> Free &amp; open source
               <span aria-hidden="true">/</span> MIT
             </p>
           </div>
@@ -126,43 +126,36 @@
                     omastart</strong
                   ><span class="demo-badge">DEMO</span>
                 </div>
-                <p class="app-subtitle">Your next session starts here.</p>
-                <div class="demo-summary">
-                  <span
-                    ><i aria-hidden="true"></i
-                    ><b data-enabled-count>3</b> enabled</span
-                  ><span>4 apps</span>
-                </div>
+                <p class="app-subtitle">
+                  <b data-enabled-count>3</b> APPS ENABLED AT LOGIN
+                </p>
                 <div
                   class="demo-filters"
                   role="group"
-                  aria-label="Filter demo apps"
+                  aria-label="Demo startup views"
                 >
                   <button
                     type="button"
-                    data-filter="all"
+                    data-filter="applications"
                     aria-pressed="true"
                     disabled
                   >
-                    All apps</button
+                    Applications</button
                   ><button
                     type="button"
-                    data-filter="enabled"
+                    data-filter="readonly"
                     aria-pressed="false"
                     disabled
                   >
-                    Enabled</button
-                  ><button
-                    type="button"
-                    data-filter="disabled"
-                    aria-pressed="false"
-                    disabled
-                  >
-                    Disabled
+                    Read-only
                   </button>
                 </div>
+                <p class="demo-section-title">
+                  <span data-demo-section>STARTUP APPLICATIONS</span>
+                  <b data-demo-count>3</b>
+                </p>
                 <div class="demo-list">
-                  <div class="demo-row" data-demo-row data-enabled="true">
+                  <div class="demo-row" data-demo-row data-enabled="true" data-readonly="false">
                     <span class="app-icon blue" aria-hidden="true">V</span>
                     <div class="app-info">
                       <strong>Vicinae</strong><span>XDG autostart</span>
@@ -178,7 +171,7 @@
                       <span></span>
                     </button>
                   </div>
-                  <div class="demo-row" data-demo-row data-enabled="true">
+                  <div class="demo-row" data-demo-row data-enabled="true" data-readonly="false">
                     <span class="app-icon purple" aria-hidden="true">S</span>
                     <div class="app-info">
                       <strong>Synergy</strong><span>User systemd</span>
@@ -194,7 +187,7 @@
                       <span></span>
                     </button>
                   </div>
-                  <div class="demo-row" data-demo-row data-enabled="true">
+                  <div class="demo-row" data-demo-row data-enabled="true" data-readonly="false">
                     <span class="app-icon orange" aria-hidden="true">h</span>
                     <div class="app-info">
                       <strong>hyprsunset</strong><span>Hyprland</span>
@@ -210,21 +203,14 @@
                       <span></span>
                     </button>
                   </div>
-                  <div class="demo-row" data-demo-row data-enabled="false">
-                    <span class="app-icon green" aria-hidden="true">>_</span>
+                  <div class="demo-row" data-demo-row data-enabled="false" data-readonly="true">
+                    <span class="app-icon green" aria-hidden="true">⚙</span>
                     <div class="app-info">
-                      <strong>Foot</strong><span>XDG autostart</span>
+                      <strong>Session portal</strong
+                      ><span>User systemd · Read-only</span>
                     </div>
-                    <button
-                      type="button"
-                      class="switch"
-                      role="switch"
-                      aria-checked="false"
-                      aria-label="Foot startup in demo"
-                      disabled
-                    >
-                      <span></span>
-                    </button>
+                    <span class="demo-readonly">Read-only</span
+                    ><span class="demo-chevron" aria-hidden="true">⌄</span>
                   </div>
                   <p class="demo-empty" hidden>No apps in this view.</p>
                 </div>
@@ -410,8 +396,8 @@
               You’ll need Omarchy Quattro, Python 3.10+, <code>systemctl</code>,
               and <code>luac</code>. Install as your normal desktop user.
             </p>
-            <a class="button" href="assets/omastart-0.2.1.zip" download
-              >Download v0.2.1 <span aria-hidden="true">↓</span></a
+            <a class="button" href="assets/omastart-0.3.0.zip" download
+              >Download v0.3.0 <span aria-hidden="true">↓</span></a
             >
             <p class="small">
               Source ZIP · MIT licensed · No build step<br /><a
@@ -423,7 +409,7 @@
           <div>
             <div class="terminal">
               <div class="terminal-title">
-                <span>~/Downloads/omastart-0.2.1</span
+                <span>~/Downloads/omastart-0.3.0</span
                 ><button type="button" class="copy-button" data-copy hidden>
                   Copy
                 </button>
@@ -431,7 +417,7 @@
               <div class="terminal-body">
                 <p class="terminal-comment">
                   # Extract the download, then open a terminal<br /># inside the
-                  omastart-0.2.1 folder.
+                  omastart-0.3.0 folder.
                 </p>
                 <pre><code id="install-command">python3 scripts/install.py</code></pre>
                 <p class="terminal-comment">
@@ -443,7 +429,9 @@
             <p class="install-note">
               The installer validates and copies the plugin, backs up the
               previous installation, and enables the bar widget. It doesn’t
-              change your startup apps. Prefer Git-managed updates? See the
+              change your startup apps. It also repairs a registered widget
+              that has fallen out of the bar or a Pocket layout. Prefer
+              Git-managed updates? See the
               <a href="https://github.com/pablousx/omastart#installation"
                 >native Omarchy installation</a
               >.

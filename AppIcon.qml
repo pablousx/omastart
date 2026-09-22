@@ -2,19 +2,17 @@ import QtQuick
 import Quickshell
 import qs.Commons
 
-Rectangle {
+Item {
     id: root
     property string iconName: ""
     property string appName: ""
-    implicitWidth: Style.space(38)
-    implicitHeight: Style.space(38)
-    radius: Style.cornerRadius
-    color: Qt.alpha(Color.foreground, 0.055)
+    implicitWidth: Style.space(26)
+    implicitHeight: Style.space(26)
 
     Image {
         id: icon
         anchors.centerIn: parent
-        width: parent.width * 0.72
+        width: parent.width
         height: width
         sourceSize.width: width * 2
         sourceSize.height: height * 2
@@ -27,7 +25,7 @@ Rectangle {
         anchors.centerIn: parent
         visible: icon.status !== Image.Ready
         text: root.appName === "hyprsunset" ? "☾" : root.appName.slice(0, 1).toUpperCase() || "↗"
-        font.pixelSize: root.appName === "hyprsunset" ? Style.space(27) : Style.font.subtitle
+        font.pixelSize: root.appName === "hyprsunset" ? Style.space(16) : Style.space(12)
         font.bold: true
         color: Color.accent
     }

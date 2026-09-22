@@ -386,9 +386,14 @@ code {
   color: var(--muted);
 }
 .app-subtitle {
-  color: var(--muted);
+  color: var(--accent);
   font-size: 9px;
-  margin-top: 3px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  margin-top: 4px;
+}
+.app-subtitle b {
+  font-weight: 600;
 }
 .demo-summary {
   display: flex;
@@ -416,9 +421,9 @@ code {
   display: flex;
   gap: 6px;
   border-bottom: 1px solid var(--line);
+  margin-top: 18px;
 }
 .demo-filters button {
-  flex: 1;
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -431,6 +436,18 @@ code {
   color: var(--blue);
   background: var(--surface);
   border-color: var(--blue);
+}
+.demo-section-title {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0 2px;
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.demo-section-title b {
+  font-weight: 600;
 }
 .demo-list {
   min-height: 248px;
@@ -468,6 +485,14 @@ code {
   display: block;
   font-size: 9px;
   color: var(--muted);
+}
+.demo-readonly {
+  color: var(--muted);
+  font-size: 9px;
+}
+.demo-chevron {
+  color: var(--muted);
+  font-size: 12px;
 }
 .switch {
   display: grid;

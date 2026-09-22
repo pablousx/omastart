@@ -50,10 +50,12 @@ After changing the plugin or its README, run from the repository root:
 python3 scripts/build_site_download.py
 ```
 
-This refreshes the ZIP, SHA-256 checksum, actual panel screenshot, and license.
+This refreshes the ZIP, SHA-256 checksum, reviewed installed-panel screenshot,
+and license.
 The archive has fixed timestamps for reproducibility. If the manifest version
 changes, update the visible version and ZIP links in `index.html`, and remove the
-superseded ZIP after confirming the new download. The launch-arrow favicon and
+superseded ZIP only when it was never published; retain every released archive.
+The launch-arrow favicon and
 inline SVGs use `LaunchIcon.qml` geometry; keep them in sync if the logo changes.
 
 ## Privacy and terms
@@ -63,27 +65,32 @@ inline SVGs use `LaunchIcon.qml` geometry; keep them in sync if the logo changes
 10, 2026. Keep the text accurate if data handling, hosting, or project contact
 options change. Browser theme storage uses only `omastart-theme`; demo changes
 stay in memory. No personal data, real startup backups, or diagnostics are
-bundled. The screenshot shows a sample panel, not the surrounding desktop.
+bundled. The screenshot is cropped to the installed panel and filtered to a
+known public hyprsunset row; it contains no surrounding desktop or unrelated
+startup names.
 
 The styling follows the sibling site without importing any of its Google account,
 OAuth, file-upload, or retention behavior.
 
 ## Verification
 
-Checked in Chromium on September 10, 2026 under a local `/omastart/` path:
+Checked in Chromium on September 22, 2026 from a loopback server:
 
-- 30 page/theme/viewport combinations: all three pages, both themes, and widths
-  of 320, 390, 768, 1024, and 1440 pixels; no horizontal page overflow.
-- 12 automated WCAG A/AA accessibility scans at mobile and desktop widths;
-  no reported violations. Desktop and mobile screenshots were also inspected.
-- 17 functional checks covering keyboard switches, undo, filters, empty results,
-  focus recovery, theme persistence, legal navigation, FAQ, copy success/failure,
-  download bytes, no JavaScript, denied storage, reduced motion, cookies,
-  third-party requests, and browser errors.
-- 59 relative links, assets, and fragments resolved. Download checksum and ZIP
-  integrity matched; the extracted source passed all 56 isolated Python tests
-  and Omarchy's native plugin manifest validator.
+- 30 page/theme/viewport combinations cover all three pages, Tokyo Night and
+  Everforest, and widths of 320, 390, 768, 1024, and 1440 pixels. None has
+  horizontal page overflow, browser errors, or third-party requests.
+- Mobile and desktop captures of the landing, privacy, and terms pages were
+  visually inspected. Text, navigation, controls, policy content, and the
+  compact Applications/Read-only demo remain legible and contained.
+- Four browser scenarios cover demo switches and Undo, the read-only view,
+  theme persistence, denied clipboard/storage access, reduced motion, cookies,
+  no-JavaScript rendering, local links, fragments, version text, license,
+  preview, source download, and checksum.
+- The 127,609-byte download hashes to
+  `3e04762e16e09a9c96f8a8cc2cf3928fd239fc5a941446f04e1d58b23329a428`.
+  The extracted source passes all 103 Python tests, 97 QML assertions, QML
+  analysis, and Omarchy's official manifest validator.
 
-These are automated and visual checks, not a claim of complete accessibility
-certification. The local report and screenshots are kept in the repository's
-ignored `.verification/site/` directory.
+These automated, keyboard, semantic, and visual checks are not a claim of
+complete accessibility certification. Local reports and screenshots remain in
+the ignored `.verification/site/` directory.

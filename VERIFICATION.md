@@ -1,100 +1,96 @@
-# Verification — 0.2.1
+# Verification — 0.3.0
 
-Verified locally on September 12, 2026, against Omarchy 4.0.3-1 and the
+Verified locally on September 22, 2026, against Omarchy 4.0.4-1 and the
 installed Quattro shell. These results describe local validation of the plugin;
-marketplace review is a separate process.
+GitHub checks and marketplace review are separate exact-commit processes.
 
-## Application toggle update
+## Compact panel and installer repair
 
-The current local update passes 98 Python tests, QML analysis, and 97 QML
-fixture assertions. The additional checks cover disabling multiple providers
-in one journal, selecting one eligible method on enable, grouped undo and
-recovery, rollback after reload failure, edits during planning, removed methods,
-protected sources, keyboard activation, progress, and app-level Undo feedback.
-Read-only tab checks cover separation from editable tabs, enabled-before-disabled
-ordering, protected system visibility, search/source filtering, and picker navigation.
-The consolidated Applications tab is checked for combined enabled/disabled items,
-preserved ordering and unknown states, and removal of the separate status tabs.
-Opening-order checks cover enabled-first sorting, stable rows through app/source
-toggles and refreshes, filter/tab/picker navigation, appended and removed items,
-and sorting again after reopening.
-Frame-separated layout checks also keep a scrolled list's viewport, scroll offset,
-row height, title width, switch position, and feedback height unchanged through
-saving, disabling, enabling, multiline feedback, and message dismissal.
-Add/remove checks cover newest-added placement, keeping disabled desktop entries,
-explicit list removal and Undo, persistent removal records, re-adding existing
-methods, masks, stale revisions, symlinks, and interrupted-removal recovery.
-Multiple Lua entries are edited against one snapshot and validated together.
-The screenshot harness renders the real panel with isolated sample data.
-No real startup switches are used by these checks.
+The panel now uses a 400×620 logical content area with a compact native header,
+icon actions for Add and Refresh, smaller application rows, native hover and
+selection fills, section separators, and combined status/source subtitles. The
+available controls retain accessible names, keyboard focus, stable list state,
+and the existing startup-versus-running distinction.
 
-Security-boundary checks cover absolute runtime tool identities, a closed
-environment, stdout/stderr limits, deadlines while stdin or output is blocked,
-process-group cleanup after timeout and normal parent exit, and panel-side stream
-caps. Filesystem checks substitute a configuration parent during a transaction
-and confirm that the pinned directory receives the complete atomic replacement
-while the substituted path remains untouched. Installer contract checks require
-descriptor-relative staging, backup, and destination renames.
+The local installer now detects a plugin that remains in the generic plugin
+registry but has fallen out of the bar layout. It disables that stale entry
+before enabling the bar widget again. If a Pocket entry still names omastart as
+a member, the repaired widget is inserted immediately before Pocket; ordinary
+installations preserve their exact section, index, and widget settings.
+
+Five installer unit tests cover direct placement, default placement, Pocket
+members represented as strings and arrays, and stale generic registration.
+The live verifier no longer assumes that this machine's application preferences
+have historical enabled states; it checks the expected source representation
+and reports the state it actually observes.
 
 ## Isolated checks
 
-- 98 Python `unittest` cases pass using disposable configuration trees and an
-  injected systemd runner. Tests include lossless Lua/XDG round trips, global
-  service masking, generated-unit association, stale revisions, injection
-  strings, symlinks, atomic replacement, permission preservation, concurrent
-  locking, failure rollback, interrupted recovery, and undo.
-- 97 QML fixture assertions pass, including native widget/panel loading,
-  source and status filters, case-insensitive search, expanded details,
-  generated-unit labeling, infrastructure protection, picker behavior,
-  keyboard typing/navigation/Escape, and failure-state preservation. The UX
-  revision additionally checks direct status tabs, filter reset, search clearing,
-  Ctrl+F, picker return/Manage navigation, row progress, contextual success,
-  immediate Undo, invalidation after external edits, persistent failures, and
-  exact keyboard-focus restoration after a background refresh.
-- QML analysis passes with no unexpected diagnostics. The checker identifies
-  known Omarchy dynamic-object and Quickshell enum metadata gaps separately;
-  those interfaces are also checked at runtime.
-- Omarchy's official `omarchy plugin validate` passes for both the source
-  directory and the installed plugin.
+- 103 Python `unittest` cases pass using disposable HOME/XDG trees and injected
+  systemd runners. No test contacts the real user manager or changes a real
+  startup preference.
+- 97 QML fixture assertions pass with the backend absent and the display, bus,
+  HOME, config, cache, and runtime environments isolated.
+- QML analysis passes for all eight QML files with no unexpected diagnostics.
+  The 57 reported dynamic Omarchy/Quickshell metadata gaps are the known set
+  covered by runtime checks.
+- `omarchy plugin validate` passes for the source tree and installed snapshot.
+- Repository configuration validation passes, as do all nine tests of the
+  repository setup tooling. `git diff --check` reports no whitespace errors.
 
-The offscreen fixture replaces only the Wayland window container, since Qt's
-offscreen platform has no layer-shell window backend. Real window behavior is
-checked in the installed shell below.
+The offscreen QML process reports the expected lack of an IPC socket and window
+mask support; it still reaches `OMASTART_QML_PASS 97 assertions` and exits
+successfully.
 
 ## Installed UI acceptance
 
-The native panel was opened and visually inspected on both DP-1 (2560×1440)
-and HDMI-A-1 (1920×1080), using the current theme and actual monitor geometry.
+The candidate was installed with `scripts/install.py`, which created its normal
+private backup and selected the content-hashed runtime. The native panel was
+opened and visually inspected on DP-1 (2560×1440) and HDMI-A-1 (1920×1080), at
+their actual scales and geometry.
 
-| Application | Verified startup status | Independent sources |
+| Application | Observed startup status | Represented sources |
 | --- | --- | --- |
-| Vicinae | Enabled through XDG autostart | Generated `app-vicinae@autostart.service` is merged into its desktop entry; the native `vicinae.service` is disabled |
-| Synergy | Enabled globally through user systemd | `synergy.service`, linked from the global graphical-session target; source has a supported per-user toggle |
-| hyprsunset | Enabled through Hyprland | `o.launch_on_start("hyprsunset")` in user `autostart.lua`; native service is disabled |
+| Vicinae | Disabled | XDG autostart and user systemd |
+| Synergy | Disabled for this user | User systemd, including its global-enable explanation |
+| hyprsunset | Enabled | Hyprland enabled; user systemd disabled |
 
-All six application/display checks and ten UX checks passed. The UX checks
-cover direct status filtering, actionable empty results, installed picker
-search, returning to the previous startup search, and advanced filters on
-both monitors. Source expansion, system item filtering, panel bounds,
-application icons, and startup/running-state separation were inspected. Current runtime logs contain no omastart warnings
-or errors. The original live captures remain in local verification artifacts.
-The 0.2.1 `preview.png` renders the actual panel with isolated sample data
-using `scripts/capture_ui.py`; it contains no surrounding desktop.
+All six application/display checks and ten UX checks pass. The UX checks cover
+the read-only view, actionable empty results, installed-app picker search,
+returning from the picker, and advanced filters on both monitors. The compact
+header, application icons, row subtitles, switches, chevrons, expanded source
+details, scrolling, separators, and fixed feedback area were inspected in every
+capture. No panel content extends outside its rectangle.
 
-No real startup toggles were invoked. File and symlink fingerprints were
-identical before and after the live acceptance run. Comparing the wider build
-session's initial baseline also showed an independently added
-`wine-sni-bridge.service` and its enablement link; those external additions
-were preserved. Original startup files and `smartalb.autostart` were unchanged.
+The public `preview.png` is a real installed-shell capture, restricted through
+the panel's own search to the known hyprsunset row. It contains only the panel,
+with no surrounding desktop, paths, logs, diagnostics, or unrelated application
+names. Per-monitor and expanded-state captures remain in ignored
+`.verification/` storage and are not distributed.
 
-The detailed local acceptance JSON and per-display screenshots are in the
-ignored `.verification/` directory. They are not shipped as public test
-fixtures. Use the test commands in README to reproduce isolated checks.
+No startup toggle was invoked. File and symlink fingerprints captured before
+installation and after both live acceptance runs are identical.
+
+## Distribution and website
+
+The versioned archive is built from the reviewed allowlist with fixed timestamps.
+Its member list contains the plugin QML/JavaScript, backend, scripts, tests,
+manifest, README, verification notes, license, and preview; it excludes Git
+metadata, repository-agent instructions, website source, caches, private
+verification artifacts, and user configuration. ZIP integrity, checksum,
+extracted manifest, extracted-source tests, official validation, and a second
+byte-identical rebuild are checked before release.
+
+The website is checked from a loopback server with relative `/omastart/` paths.
+The landing, privacy, and terms pages remain usable without JavaScript; desktop
+and mobile layouts, both themes, keyboard interactions, reduced motion, links,
+fragments, license, preview, versioned download, and checksum are reviewed.
 
 ## Limits of verification
 
-Future-login behavior is covered through provider fixtures and systemd's
-persistent configuration semantics. The real session was not logged out and
-no real application was started, stopped, enabled, disabled, or restarted for
-testing. Unsupported activation mechanisms remain read-only as documented in
-README.
+Future-login behavior is covered through provider fixtures and persistent
+configuration semantics. The real session was not logged out and no real
+application was started, stopped, enabled, disabled, or restarted. Unsupported
+activation mechanisms remain read-only as documented in the README. Automated
+marketplace compatibility and security-baseline results apply only to the exact
+post-merge commit submitted later and are not a security audit.

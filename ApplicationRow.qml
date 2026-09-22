@@ -5,32 +5,24 @@ import qs.Commons
 import qs.Ui as Ui
 import "Model.js" as Model
 
-Rectangle {
+Ui.CursorSurface {
     id: root
     required property var entry
     required property var manager
     property bool picker: false
-    property bool hasCursor: false
     readonly property bool expanded: !picker && manager.expandedId === entry.id
     property bool technical: false
-    readonly property bool pending: manager.busy && (manager.pendingId === entry.id || !picker && entry.sources.some(function(s) { return s.id === manager.pendingId }))
-    readonly property bool locked: !picker && Model.locked(entry)
+    readonly property bool pending: manager.busy && (manager.pendingId === entry.id || !picker && (entry.sources || []).some(function(s) { return s.id === manager.pendingId }))
+    readonly property bool locked: !picker && !!entry.sources && Model.locked(entry)
+    readonly property string subtitle: entry.activeKinds && entry.kinds && entry.sources ? Model.subtitle(entry) : ""
     signal selected()
     signal revealRequested()
     onExpandedChanged: { if (!expanded) technical = false; else revealRequested() }
     onTechnicalChanged: if (technical) revealRequested()
-    Behavior on color { ColorAnimation { duration: 120 } }
-    implicitHeight: contents.implicitHeight + Style.space(16)
-    radius: Style.space(6)
-    color: expanded ? Qt.alpha(Color.accent, 0.045) : (hover.containsMouse || hasCursor ? Qt.alpha(Color.foreground, 0.05) : "transparent")
-    border.width: expanded || hasCursor ? 1 : 0
-    border.color: Qt.alpha(Color.accent, hasCursor ? 0.7 : 0.20)
-
-    FontMetrics {
-        id: statusMetrics
-        font.family: Style.font.family
-        font.pixelSize: Style.space(11)
-    }
+    implicitHeight: contents.implicitHeight + Style.space(12)
+    current: expanded
+    foreground: Color.popups.text
+    accent: Color.accent
 
     Rectangle {
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
@@ -47,7 +39,7 @@ Rectangle {
         id: hover
         anchors.top: parent.top
         width: parent.width
-        height: summary.implicitHeight + Style.space(18)
+        height: summary.implicitHeight + Style.space(14)
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: { root.selected(); root.activate() }
@@ -58,23 +50,24 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: Style.space(9)
-        spacing: Style.space(10)
+        anchors.margins: Style.space(7)
+        spacing: Style.space(8)
 
         RowLayout {
             id: summary
             Layout.fillWidth: true
-            spacing: Style.space(8)
+            spacing: Style.space(9)
             AppIcon { iconName: root.entry.icon; appName: root.entry.name }
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: Style.space(4)
-                Label { objectName: "applicationTitle"; Layout.fillWidth: true; text: root.entry.name; font.bold: false; font.pixelSize: Style.space(13) }
+                spacing: Style.space(1)
+                Label { objectName: "applicationTitle"; Layout.fillWidth: true; text: root.entry.name; font.bold: false; font.pixelSize: Style.space(12) }
                 Label {
                     Layout.fillWidth: true
-                    text: root.picker ? (root.entry.exists ? "Already in your startup list" : "Start this app when you sign in") : Model.subtitle(root.entry)
-                    color: Qt.alpha(Color.popups.text, 0.70)
-                    font.pixelSize: Style.space(11)
+                    text: root.picker ? (root.entry.exists ? "Already in your startup list" : "Start this app when you sign in")
+                        : (root.pending ? "Saving…" : (root.entry.status || "") + (root.subtitle ? " · " + root.subtitle : "") + (root.locked ? " · Read-only" : ""))
+                    color: Qt.darker(Color.popups.text, 1.4)
+                    font.pixelSize: Style.space(10)
                 }
             }
             ActionButton {
@@ -87,37 +80,15 @@ Rectangle {
                 enabled: root.picker && (root.entry.exists || !root.manager.busy)
                 onClicked: root.activate()
             }
-            ColumnLayout {
-                id: statusColumn
-                visible: !root.picker
-                Layout.preferredWidth: Math.ceil(Math.max(statusMetrics.advanceWidth("Disabled"), statusMetrics.advanceWidth("Saving…"),
-                    statusMetrics.advanceWidth(root.entry.status || ""), root.locked ? statusMetrics.advanceWidth("Read-only") : 0))
-                Layout.minimumWidth: statusColumn.Layout.preferredWidth
-                Layout.maximumWidth: statusColumn.Layout.preferredWidth
-                spacing: 0
-                Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: root.pending ? "Saving…" : root.entry.status || ""
-                    color: root.entry.enabled ? Color.accent : Qt.alpha(Color.popups.text, 0.70)
-                    font.pixelSize: Style.space(11)
-                }
-                Label {
-                    Layout.alignment: Qt.AlignRight
-                    visible: root.locked
-                    text: "Read-only"
-                    font.pixelSize: Style.space(10)
-                    color: Qt.alpha(Color.popups.text, 0.70)
-                }
-            }
             Item {
-                visible: !root.picker && !root.locked && root.entry.sources && root.entry.sources.length > 0
+                visible: !root.picker && !root.locked && !!root.entry.sources && root.entry.sources.length > 0
                 implicitWidth: Style.space(54)
                 implicitHeight: Style.space(34)
                 SourceToggle {
                     id: singleToggle
                     objectName: "startupToggle"
                     anchors.centerIn: parent
-                    visible: !root.picker && root.entry.sources && root.entry.sources.length > 0 && !root.locked
+                    visible: !root.picker && !!root.entry.sources && root.entry.sources.length > 0 && !root.locked
                     sourceItem: root.entry.sources ? root.entry.sources[0] : ({})
                     applicationItem: root.entry.sources && root.entry.sources.length > 1 ? root.entry : null
                     manager: root.manager
@@ -129,8 +100,8 @@ Rectangle {
                 visible: !root.picker
                 text: root.expanded ? "⌃" : "⌄"
                 iconOnly: true
-                fontSize: Style.space(11)
-                horizontalPadding: Style.space(8)
+                fontSize: Style.space(10)
+                horizontalPadding: Style.space(6)
                 tooltipText: root.locked ? "Why this startup item is read-only" : "Startup details for " + root.entry.name
                 Accessible.name: (root.expanded ? "Hide details for " : "Show details for ") + root.entry.name
                 focusable: true

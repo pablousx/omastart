@@ -9,7 +9,7 @@ autostart, and user systemd into one searchable application list.
 
 - **Plugin ID:** `io.github.pablousx.omastart`
 - **Author:** pablousx
-- **Version:** 0.2.1
+- **Version:** 0.3.0
 - **License:** MIT
 
 ## Use
@@ -26,7 +26,9 @@ disabled items last, preserving alphabetical order within each group.
 Search by application, command, path, or startup source;
 the clear button returns you to the list. **Filters** contains source choices
 and **Include system items**. Active filters remain visible when collapsed,
-and **Reset filters** clears them in one step.
+and **Reset** clears them in one step. The compact header keeps Add and Refresh
+available as icon buttons with accessible names and tooltips, while each row
+combines status and source context beneath the application name.
 
 An app's switch controls its startup methods together. Turning it off disables
 every enabled method in one reversible change. Turning it on enables one
@@ -154,6 +156,10 @@ enables the widget in the left section. It backs up the previous plugin and
 Git remote and invokes no plugin install hooks. Re-run it to deploy local edits;
 existing widget placement is preserved. Installed runtime files use a content
 hash in their path so Quickshell cannot retain stale compiled QML on update.
+If an interrupted shell update leaves the plugin registered but missing from
+the bar, the installer repairs its placement. When Pocket still records the
+widget as a member, omastart is restored immediately before that Pocket entry
+instead of moving to the default section.
 
 To remove the widget without changing startup preferences:
 
@@ -281,8 +287,9 @@ only inspect, search, filter, expand, and refresh the UI; they do not toggle app
 connected display, checks Vicinae, Synergy, and hyprsunset, inspects protected
 items, and compares startup fingerprints. It never invokes a startup toggle.
 Its local report and per-display screenshots are written to `.verification/`;
-the cropped main-panel capture becomes `preview.png`. It is not part of the
-isolated test command and is intended for this machine's acceptance run.
+the cropped public capture becomes `preview.png` after restricting the panel to
+the known hyprsunset row. It is not part of the isolated test command and is
+intended for this machine's acceptance run.
 
 ## Project website
 

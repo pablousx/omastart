@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.pablousx.omastart",
   "name": "omastart",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "author": "pablousx",
   "license": "MIT",
   "description": "Manage everything that starts with your Omarchy session.",
