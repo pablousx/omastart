@@ -1,0 +1,6 @@
+interface:
+  display_name: "Debug omastart"
+  short_description: "Diagnose startup state, saves, UI, and crashes"
+  default_prompt: "Use $omastart-debugging to investigate this issue without changing real startup settings."
+policy:
+  allow_implicit_invocation: true

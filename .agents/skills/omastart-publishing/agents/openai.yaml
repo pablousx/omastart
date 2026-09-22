@@ -1,0 +1,6 @@
+interface:
+  display_name: "Publish omastart"
+  short_description: "Release and update the plugin, site, and listing"
+  default_prompt: "Use $omastart-publishing to prepare the next release and identify the correct marketplace update path."
+policy:
+  allow_implicit_invocation: true

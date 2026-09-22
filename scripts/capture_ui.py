@@ -36,8 +36,8 @@ ShellRoot {
     property var names: ["overview", "details", "picker", "alert", "filters", "readonly", "disabled"]
     FloatingWindow {
         visible: true
-        implicitWidth: Style.space(472)
-        implicitHeight: Style.space(682)
+        implicitWidth: Style.space(432)
+        implicitHeight: Style.space(652)
         color: Color.popups.background
         Rectangle {
             id: card

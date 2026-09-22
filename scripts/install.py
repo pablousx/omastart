@@ -28,6 +28,42 @@ def command(argv, environment, *, check=True, timeout=15, pass_fds=()):
     return result
 
 
+def member_ids(value):
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return []
+
+
+def configured_as_generic_plugin(config, plugin_id):
+    return any(entry.get("id") == plugin_id for entry in config.get("plugins", []))
+
+
+def previous_placement(config, plugin_id):
+    """Return enabled/placed state and the best placement to restore.
+
+    Pocket keeps its members in the ordinary bar layout and mirrors their ids
+    in its own ``members`` setting.  A failed or interrupted reinstall can
+    leave only that mirror.  Treat it as placement evidence so the next local
+    install repairs the missing layout entry immediately before the pocket.
+    """
+    layout = config.get("bar", {}).get("layout", {})
+    placement = ["--section", "left"]
+    old_entry = {}
+    for section, entries in layout.items():
+        for index, entry in enumerate(entries):
+            if entry.get("id") == plugin_id:
+                return True, True, ["--section", section, "--index", str(index)], entry
+
+    for section, entries in layout.items():
+        for index, entry in enumerate(entries):
+            if plugin_id in member_ids(entry.get("members")):
+                placement = ["--section", section, "--index", str(index)]
+                return False, False, placement, old_entry
+    return False, False, placement, old_entry
+
+
 def main():
     manifest = json.loads((PROJECT / "manifest.json").read_text())
     plugin_id = manifest["id"]
@@ -51,16 +87,9 @@ def main():
             previous_config = json.loads(shell_path.read_text())
         else:
             previous_config = {}
-        was_enabled = any(entry.get("id") == plugin_id
-                          for entries in previous_config.get("bar", {}).get("layout", {}).values()
-                          for entry in entries)
-        placement = ["--section", "left"]
-        old_entry = {}
-        for section, entries in previous_config.get("bar", {}).get("layout", {}).items():
-            for index, entry in enumerate(entries):
-                if entry.get("id") == plugin_id:
-                    placement = ["--section", section, "--index", str(index)]
-                    old_entry = entry
+        was_enabled, _, placement, old_entry = previous_placement(
+            previous_config, plugin_id)
+        stale_generic_entry = configured_as_generic_plugin(previous_config, plugin_id)
 
         stage_name = ".omastart-stage-" + uuid.uuid4().hex
         os.mkdir(stage_name, 0o700, dir_fd=plugins_fd)
@@ -113,7 +142,10 @@ def main():
                 time.sleep(0.25)
             else:
                 raise RuntimeError("Omarchy did not discover the installed plugin within 10 seconds")
-            if not was_enabled or disabled_for_update:
+            if stale_generic_entry and not was_enabled:
+                command([OMARCHY, "plugin", "disable", plugin_id], environment)
+            needs_enable = not was_enabled or disabled_for_update
+            if needs_enable:
                 for _ in range(3):
                     enabled = command([OMARCHY, "plugin", "enable", plugin_id, *placement],
                                       environment, check=False)
