@@ -246,6 +246,8 @@ ShellRoot {
       }
     }
 
+    TestCase { id: tooltipLookup; when: false }
+
     Timer {
         interval: 300
         running: true
@@ -266,6 +268,18 @@ ShellRoot {
                 row.activate()
                 test.check(panel.expandedId === "vicinae", "Row activation must expand sources, not toggle startup")
                 test.check(row.expanded, "Expanded row did not follow selection")
+                var details = test.find(row, "sourceDetails")
+                var tooltip = tooltipLookup.findChild(details, "actionTooltip")
+                test.check(tooltip !== null, "Shared action tooltip must be available")
+                var metadataEntry = JSON.parse(JSON.stringify(row.entry))
+                metadataEntry.name = '<b>Metadata</b><img src="file:///nonexistent-omastart-tooltip-image">'
+                row.entry = metadataEntry
+                test.check(tooltip.text === "Startup details for " + metadataEntry.name, "Details tooltip must preserve the desktop name literally")
+                test.check(tooltip.contentItem.text === tooltip.text && tooltip.contentItem.textFormat === Text.PlainText, "Action tooltip must never interpret metadata as rich text")
+                tooltip.open()
+                test.check(tooltip.contentItem.textFormat === Text.PlainText, "Visible action tooltip must remain plain text")
+                tooltip.close()
+                row.entry = test.fixture.applications[0]
                 panel.sourceFilter = "hyprland"
                 test.check(panel.applications.length === 0, "Source filter failed")
                 panel.sourceFilter = "all"

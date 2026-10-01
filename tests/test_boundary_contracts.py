@@ -29,6 +29,15 @@ class BoundaryContractTests(unittest.TestCase):
             self.assertIn("src_dir_fd", keywords)
             self.assertIn("dst_dir_fd", keywords)
 
+    def test_action_tooltip_renders_metadata_as_plain_text(self):
+        source = (ROOT / "ActionButton.qml").read_text()
+        tooltip = source.split("Controls.ToolTip {", 1)[1].split("\n    contentItem: Text {", 1)[0]
+        self.assertIn("text: control.tooltipText", tooltip)
+        self.assertIn("contentItem: Text {", tooltip)
+        self.assertIn("text: tip.text", tooltip)
+        self.assertIn("textFormat: Text.PlainText", tooltip)
+        self.assertNotIn("Controls.ToolTip.text:", source)
+
     def test_runtime_tool_identities_are_absolute(self):
         common = (ROOT / "backend/common.py").read_text()
         installer = (ROOT / "scripts/install.py").read_text()
