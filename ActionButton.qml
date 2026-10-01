@@ -20,9 +20,22 @@ Controls.Button {
     opacity: enabled ? 1 : 0.45
     Accessible.name: text
     Accessible.description: tooltipText
-    Controls.ToolTip.visible: hovered && tooltipText !== ""
-    Controls.ToolTip.text: tooltipText
-    Controls.ToolTip.delay: 700
+    Controls.ToolTip {
+        id: tip
+        objectName: "actionTooltip"
+        visible: control.hovered && control.tooltipText !== ""
+        text: control.tooltipText
+        delay: 700
+        contentItem: Text {
+            text: tip.text
+            textFormat: Text.PlainText
+            wrapMode: Text.WordWrap
+            color: Color.tooltip.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+        }
+        background: Rectangle { color: Color.tooltip.background; border.color: Color.tooltip.border; radius: Style.cornerRadius }
+    }
     contentItem: Text {
         id: label
         text: control.text

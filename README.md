@@ -196,6 +196,8 @@ interpreter commands are not merged merely because they share an interpreter.
 Configuration edits are per-user. No files under `/usr`, `/etc`, or
 `/usr/share/omarchy` are written. Commands are passed as argument arrays;
 startup commands and Lua configuration are never executed by the backend.
+Application names in action tooltips are rendered as plain text, not HTML;
+embedded image tags are not loaded.
 
 Every change takes a process lock, rescans its source, checks the displayed
 revision, and journals the original file bytes or symlink before changing it.
